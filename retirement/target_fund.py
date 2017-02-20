@@ -6,7 +6,7 @@ BOND_YIELD = 2.0 / 100.0
 YearAllocation = namedtuple('YearAllocation', ['years', 'stocks', 'bonds'])
 
 
-class Vanguard(object):
+class TargetFund(object):
     ALLOCATION = [YearAllocation(years=50, stocks=90.1, bonds=9.9),
                   YearAllocation(years=45, stocks=90.1, bonds=9.9),
                   YearAllocation(years=40, stocks=90.1, bonds=9.9),

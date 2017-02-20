@@ -3,13 +3,13 @@ import argparse
 import math
 import datetime
 
-from vanguard import Vanguard
+from target_fund import TargetFund
 
 ANNUAL_RAISE = 3.0
 
 
 def retire(salary, contribution, num_years, growth, start_with=0.0):
-    fund = Vanguard(target_year=num_years, start_with=start_with)
+    fund = TargetFund(target_year=num_years, start_with=start_with)
     for year in range(num_years):
         salary *= (1 + (ANNUAL_RAISE / 100.0))
         for month in range(0, 12):
