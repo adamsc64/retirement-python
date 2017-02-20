@@ -28,13 +28,9 @@ def format_state(year, month, monthly, gain, total):
                 inflation_total)
 
 
-def get_fund(num_years, start_with=0.0):
-    return TargetFund(target_year=num_years, start_with=start_with)
-
-
 def main():
     args = parser.parse_args()
-    fund = get_fund(args.num_years, args.start_with)
+    fund = TargetFund(args.num_years, args.start_with)
     salary = args.salary
     num_years = args.num_years
     contribution = args.contribution
