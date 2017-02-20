@@ -20,8 +20,9 @@ class Vanguard(object):
                   YearAllocation(years=0, stocks=42.1, bonds=56.9),
                   ]
 
-    def __init__(self, target_year):
+    def __init__(self, target_year, start_with=0):
         self.target_year = target_year
+        self.total = start_with
 
     def get_allocation(self, years_to_go):
         for year_allocation in reversed(self.ALLOCATION):
@@ -33,3 +34,11 @@ class Vanguard(object):
         stock_part = (year_allocation.stocks / 100.0) * (STOCK_YIELD)
         bond_part = (year_allocation.bonds / 100.0) * (BOND_YIELD)
         return stock_part + bond_part
+
+    def do_month(self, contribution, yields):
+        adding = float(contribution)
+        self.total += adding
+        gain = self.total * yields
+        gain = (int(gain * 100.0) / 100.0)
+        self.total += gain
+        return gain
