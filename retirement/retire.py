@@ -35,10 +35,10 @@ def main():
     num_years = args.num_years
     contribution = args.contribution
     for year in range(num_years):
+        monthly = (salary / 12.0) * (contribution / 100.0)
+        years_left = num_years - year
+        fund.set_years_left(years_left)
         for month in range(12):
-            years_left = num_years - year
-            fund.set_years_left(years_left)
-            monthly = (salary / 12.0) * (contribution / 100.0)
             gain = fund.do_month(contribution=monthly)
             print_state(year, month, monthly, gain, fund.total)
         salary *= (1 + (ANNUAL_RAISE / 100.0))
