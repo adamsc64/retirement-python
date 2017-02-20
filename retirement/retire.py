@@ -4,16 +4,25 @@ import math
 import datetime
 
 
+class Fund(object):
+    def __init__(self, growth, start_with=0):
+        self.growth = float(growth) / 100.0
+        self.total = start_with
+
+    def do_month(self, per_month):
+        adding = float(per_month)
+        self.total += adding
+        gain = self.total * (self.growth / 12.0) + 1.0
+        self.total += gain
+        return gain
+
+
 def retire(per_month, num_years, growth, start_with=0.0):
-    growth = float(growth) / 100.0
-    total = start_with
+    fund = Fund(growth=growth, start_with=start_with)
     for year in range(num_years):
         for month in range(0, 12):
-            adding = float(per_month)
-            total += adding
-            gain = total * (growth / 12.0) + 1.0
-            total += gain
-            inflation_total = total * math.pow(1.0 - (3.22 / 100.0), year)
+            gain = fund.do_month(per_month=per_month)
+            inflation_total = fund.total * math.pow(1.0 - (3.22 / 100.0), year)
             print ("Year {}, "
                    "Month {}, "
                    "Adding: ${:,.2f}, "
@@ -23,9 +32,9 @@ def retire(per_month, num_years, growth, start_with=0.0):
                    ).format(
                     year + 1,
                     month + 1,
-                    adding,
+                    per_month,
                     gain,
-                    total,
+                    fund.total,
                     inflation_total,
                     )
 
