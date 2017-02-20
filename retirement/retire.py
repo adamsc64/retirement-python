@@ -8,8 +8,7 @@ from target_fund import TargetFund
 ANNUAL_RAISE = 3.0
 
 
-def retire(salary, contribution, num_years, growth, start_with=0.0):
-    fund = TargetFund(target_year=num_years, start_with=start_with)
+def retire(salary, contribution, num_years, growth, fund):
     for year in range(num_years):
         salary *= (1 + (ANNUAL_RAISE / 100.0))
         for month in range(0, 12):
@@ -35,6 +34,16 @@ def retire(salary, contribution, num_years, growth, start_with=0.0):
                     )
 
 
+def get_fund(num_years, start_with=0.0):
+    return TargetFund(target_year=num_years, start_with=start_with)
+
+
+def main():
+    args = parser.parse_args()
+    fund = get_fund(args.num_years, args.start_with)
+    retire(args.salary, args.contribution, args.num_years, args.growth, fund=fund)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Calculate projected investment total each month.')
@@ -48,5 +57,4 @@ if __name__ == "__main__":
         help='Growth rate, in percentage.')
     parser.add_argument('--start-with', type=int, default=0,
         help='Starting amount.')
-    args = parser.parse_args()
-    retire(args.salary, args.contribution, args.num_years, args.growth, args.start_with)
+    main()
