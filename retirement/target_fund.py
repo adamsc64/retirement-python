@@ -35,10 +35,15 @@ class TargetFund(object):
         bond_part = (year_allocation.bonds / 100.0) * (BOND_YIELD)
         return stock_part + bond_part
 
-    def do_month(self, contribution, yields):
+    def set_years_left(self, years_left):
+        year_allocation = self.get_allocation(years_left)
+        yields_per_year = self.get_yield(year_allocation)
+        self.yields_per_month = yields_per_year / 12.0
+
+    def do_month(self, contribution):
         adding = float(contribution)
         self.total += adding
-        gain = self.total * yields
+        gain = self.total * self.yields_per_month
         gain = (int(gain * 100.0) / 100.0)
         self.total += gain
         return gain

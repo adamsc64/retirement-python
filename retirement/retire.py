@@ -8,30 +8,24 @@ from target_fund import TargetFund
 ANNUAL_RAISE = 3.0
 
 
-def retire(salary, contribution, num_years, growth, fund):
-    for year in range(num_years):
-        salary *= (1 + (ANNUAL_RAISE / 100.0))
-        for month in range(0, 12):
-            year_allocation = fund.get_allocation(num_years - year)
-            yields_per_year = fund.get_yield(year_allocation)
-            yields_per_month = yields_per_year / 12.0
-            monthly = (salary / 12.0) * (contribution / 100.0)
-            gain = fund.do_month(contribution=monthly, yields=yields_per_month)
-            inflation_total = fund.total * math.pow(1.0 - (3.22 / 100.0), year)
-            print ("Year {}, "
-                   "Month {}, "
-                   "Adding: ${:,.2f}, "
-                   "Gain: ${:,.2f}, "
-                   "Total: ${:,.2f} "
-                   "(Inflation-Adusted: ${:,.2f})"
-                   ).format(
-                    year + 1,
-                    month + 1,
-                    monthly,
-                    gain,
-                    fund.total,
-                    inflation_total,
-                    )
+def do_month(salary, contribution, num_years, growth, year, month, fund):
+    monthly = (salary / 12.0) * (contribution / 100.0)
+    gain = fund.do_month(contribution=monthly)
+    inflation_total = fund.total * math.pow(1.0 - (3.22 / 100.0), year)
+    print ("Year {}, "
+           "Month {}, "
+           "Adding: ${:,.2f}, "
+           "Gain: ${:,.2f}, "
+           "Total: ${:,.2f} "
+           "(Inflation-Adusted: ${:,.2f})"
+           ).format(
+            year + 1,
+            month + 1,
+            monthly,
+            gain,
+            fund.total,
+            inflation_total,
+            )
 
 
 def get_fund(num_years, start_with=0.0):
@@ -41,7 +35,18 @@ def get_fund(num_years, start_with=0.0):
 def main():
     args = parser.parse_args()
     fund = get_fund(args.num_years, args.start_with)
-    retire(args.salary, args.contribution, args.num_years, args.growth, fund=fund)
+    salary = args.salary
+    num_years = args.num_years
+    contribution = args.contribution
+    growth = args.growth
+    for year in range(num_years):
+        for month in range(12):
+            years_left = num_years - year
+            fund.set_years_left(years_left)
+            do_month(salary, contribution, num_years, growth, year, month, fund=fund)
+        salary *= (1 + (ANNUAL_RAISE / 100.0))
+
+
 
 
 if __name__ == "__main__":
