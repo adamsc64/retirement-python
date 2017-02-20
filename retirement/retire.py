@@ -8,24 +8,25 @@ from target_fund import TargetFund
 ANNUAL_RAISE = 3.0
 
 
-def do_month(salary, contribution, num_years, growth, year, month, fund):
-    monthly = (salary / 12.0) * (contribution / 100.0)
-    gain = fund.do_month(contribution=monthly)
-    inflation_total = fund.total * math.pow(1.0 - (3.22 / 100.0), year)
-    print ("Year {}, "
-           "Month {}, "
-           "Adding: ${:,.2f}, "
-           "Gain: ${:,.2f}, "
-           "Total: ${:,.2f} "
-           "(Inflation-Adusted: ${:,.2f})"
-           ).format(
-            year + 1,
-            month + 1,
-            monthly,
-            gain,
-            fund.total,
-            inflation_total,
-            )
+def print_state(*args, **kwargs):
+    print(format_state(*args, **kwargs))
+
+def format_state(year, month, monthly, gain, total):
+    inflation_total = total * math.pow(1.0 - (3.22 / 100.0), year)
+    return ("Year {}, "
+            "Month {}, "
+            "Adding: ${:,.2f}, "
+            "Gain: ${:,.2f}, "
+            "Total: ${:,.2f} "
+            "(Inflation-Adusted: ${:,.2f})"
+            ).format(
+             year + 1,
+             month + 1,
+             monthly,
+             gain,
+             total,
+             inflation_total,
+             )
 
 
 def get_fund(num_years, start_with=0.0):
@@ -43,10 +44,10 @@ def main():
         for month in range(12):
             years_left = num_years - year
             fund.set_years_left(years_left)
-            do_month(salary, contribution, num_years, growth, year, month, fund=fund)
+            monthly = (salary / 12.0) * (contribution / 100.0)
+            gain = fund.do_month(contribution=monthly)
+            print_state(year, month, monthly, gain, fund.total)
         salary *= (1 + (ANNUAL_RAISE / 100.0))
-
-
 
 
 if __name__ == "__main__":
