@@ -3,25 +3,32 @@ import argparse
 import math
 import datetime
 
+from vanguard import Vanguard
+
 
 class Fund(object):
     def __init__(self, growth, start_with=0):
-        self.growth = float(growth) / 100.0
+        self.growth = growth
         self.total = start_with
 
-    def do_month(self, per_month):
+    def do_month(self, per_month, yields):
         adding = float(per_month)
         self.total += adding
-        gain = self.total * (self.growth / 12.0) + 1.0
+        gain = self.total * yields
+        gain = (int(gain * 100.0) / 100.0)
         self.total += gain
         return gain
 
 
 def retire(per_month, num_years, growth, start_with=0.0):
-    fund = Fund(growth=growth, start_with=start_with)
+    vanguard = Vanguard(target_year=num_years)
+    fund = Fund(growth=vanguard, start_with=start_with)
     for year in range(num_years):
         for month in range(0, 12):
-            gain = fund.do_month(per_month=per_month)
+            year_allocation = vanguard.get_allocation(num_years - year)
+            yields_per_year = vanguard.get_yield(year_allocation)
+            yields_per_month = yields_per_year / 12.0
+            gain = fund.do_month(per_month=per_month, yields=yields_per_month)
             inflation_total = fund.total * math.pow(1.0 - (3.22 / 100.0), year)
             print ("Year {}, "
                    "Month {}, "
