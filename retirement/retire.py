@@ -4,8 +4,6 @@ import math
 
 from target_fund import TargetFund
 
-ANNUAL_RAISE = 3.0
-
 
 def print_state(*args, **kwargs):
     print(format_state(*args, **kwargs))
@@ -41,7 +39,7 @@ def main():
         for month in range(12):
             gain = fund.do_month(contribution=monthly)
             print_state(year, month, monthly, gain, fund.total)
-        salary *= (1 + (ANNUAL_RAISE / 100.0))
+        salary *= (1 + (args.annual_raise / 100.0))
 
 
 if __name__ == "__main__":
@@ -50,6 +48,9 @@ if __name__ == "__main__":
     parser.add_argument(
         '--salary', type=int, required=True,
         help='Annual salary.')
+    parser.add_argument(
+        '--annual-raise', type=float, default=3.0,
+        help='Rate of annual raise, in percent.')
     parser.add_argument(
         '--contribution', type=int, required=True,
         help='Contribution of salary per month, in percent.')
