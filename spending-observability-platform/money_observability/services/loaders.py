@@ -273,12 +273,85 @@ class AmexLoader(BaseLoader):
 
 class WiseLoader(BaseLoader):
     source_institution = "wise"
+    EXPECTED_HEADERS = {
+        "ID",
+        "Status",
+        "Direction",
+        "Created on",
+        "Source amount (after fees)",
+        "Source currency",
+        "Target name",
+        "Reference",
+    }
 
     def validate_headers(self, headers: list[str]) -> None:
-        raise NotImplementedError
+        actual = {h for h in headers if h}
+        missing = self.EXPECTED_HEADERS - actual
+        if missing:
+            raise LoaderError(
+                f"Wise CSV is missing expected headers: {sorted(missing)}"
+            )
 
     def parse_rows(self, file_path: Path) -> list[dict]:
-        raise NotImplementedError
+        rows: list[dict] = []
+
+        with open(file_path, newline="", encoding="utf-8-sig") as fh:
+            reader = csv.DictReader(fh)
+            self.validate_headers(reader.fieldnames or [])
+
+            for raw in reader:
+                created_on = (raw.get("Created on") or "").strip()
+                amount_raw = (raw.get("Source amount (after fees)") or "").replace(",", "").strip()
+                direction_raw = (raw.get("Direction") or "").strip().upper()
+
+                if not (created_on and amount_raw and direction_raw):
+                    continue
+
+                try:
+                    posted_date = datetime.strptime(created_on, "%Y-%m-%d %H:%M:%S").date()
+                except ValueError as exc:
+                    raise LoaderError(
+                        f"Cannot parse Created on '{created_on}' in {file_path.name}: {exc}"
+                    ) from exc
+
+                try:
+                    amount_value = Decimal(amount_raw)
+                except InvalidOperation as exc:
+                    raise LoaderError(
+                        f"Cannot parse amount '{amount_raw}' in {file_path.name}: {exc}"
+                    ) from exc
+
+                if direction_raw == "OUT":
+                    amount = -abs(amount_value)
+                    direction = "debit"
+                    counterparty = (raw.get("Target name") or "").strip() or (raw.get("Source name") or "").strip()
+                elif direction_raw == "IN":
+                    amount = abs(amount_value)
+                    direction = "credit"
+                    counterparty = (raw.get("Source name") or "").strip() or (raw.get("Target name") or "").strip()
+                else:
+                    raise LoaderError(
+                        f"Unknown Direction '{direction_raw}' in {file_path.name}"
+                    )
+
+                currency = (raw.get("Source currency") or "").strip().upper() or self.default_currency
+                description = (
+                    (raw.get("Reference") or "").strip()
+                    or counterparty
+                    or (raw.get("ID") or "").strip()
+                )
+
+                rows.append(
+                    {
+                        "posted_date": posted_date,
+                        "description_raw": description,
+                        "amount": amount,
+                        "currency": currency,
+                        "direction": direction,
+                    }
+                )
+
+        return rows
 
 
 LOADER_REGISTRY: dict[str, type[BaseLoader]] = {
