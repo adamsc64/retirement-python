@@ -1,0 +1,12 @@
+# Database
+db/
+
+# Raw source data (not committed — copy files in manually)
+data/raw/
+
+# Virtual environment
+.venv/
+
+# Django
+*.log
+local_settings.py
