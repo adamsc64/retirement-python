@@ -9,11 +9,17 @@ from money_observability.services.category_rules import CATEGORY_MANUAL_REVIEW
 
 class Command(BaseCommand):
     help = (
-        "Show the most expensive uncategorized spending groups, ranked by total spend. "
+        "Show uncategorized spending groups ranked by total spend or transaction count. "
         "'Uncategorized' means the transaction is marked for Manual Review."
     )
 
     def add_arguments(self, parser):
+        parser.add_argument(
+            "--sort",
+            choices=["spend", "count"],
+            default="spend",
+            help="Rank groups by total spend (default) or number of transactions.",
+        )
         parser.add_argument(
             "--limit",
             type=int,
@@ -35,6 +41,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         limit = options["limit"]
+        sort_by = options["sort"]
         source_filter = [s.lower() for s in (options.get("sources") or [])]
         currency_filter = (options.get("currency") or "").upper() or None
 
@@ -50,11 +57,13 @@ class Command(BaseCommand):
         if currency_filter:
             queryset = queryset.filter(currency=currency_filter)
 
+        order_field = "total" if sort_by == "spend" else "-count"
+
         groups = (
             queryset
             .values("description_clean", "currency")
             .annotate(total=Sum("amount"), count=Count("id"))
-            .order_by("total")[:limit]
+            .order_by(order_field)[:limit]
         )
 
         groups = list(groups)
@@ -62,7 +71,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("No uncategorized debit transactions found."))
             return
 
+        sort_label = "total spend" if sort_by == "spend" else "transaction count"
         header = f"{'Description':<55} {'Curr':>4} {'Txns':>5} {'Total':>12}"
+        self.stdout.write(f"Ranked by {sort_label}:\n")
         self.stdout.write(header)
         self.stdout.write("-" * len(header))
 
