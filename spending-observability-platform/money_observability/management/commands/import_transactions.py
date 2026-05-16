@@ -14,7 +14,10 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from money_observability.models import ImportBatch, RawTransaction
-from money_observability.services.import_service import compute_file_hash, infer_source_from_path
+from money_observability.services.import_service import (
+    compute_file_hash,
+    infer_source_metadata_from_path,
+)
 from money_observability.services.loaders import LOADER_REGISTRY, LoaderError
 
 
@@ -74,7 +77,9 @@ class Command(BaseCommand):
 
         for csv_path in unique_files:
             try:
-                source = infer_source_from_path(csv_path)
+                source_meta = infer_source_metadata_from_path(csv_path)
+                source = source_meta.source_institution
+                profile = source_meta.source_profile
                 loader_cls = LOADER_REGISTRY.get(source)
                 if loader_cls is None:
                     skipped_count += 1
@@ -95,13 +100,13 @@ class Command(BaseCommand):
                     )
                     continue
 
-                loader = loader_cls()
+                loader = loader_cls(default_currency=source_meta.default_currency)
                 rows = loader.parse_rows(csv_path)
 
                 if not apply:
                     self.stdout.write(
                         self.style.SUCCESS(
-                            f"  [{source:6s}]  {csv_path}  (would import {len(rows)} rows)"
+                            f"  [{source:6s}/{profile}]  {csv_path}  (would import {len(rows)} rows)"
                         )
                     )
                     continue
@@ -111,6 +116,7 @@ class Command(BaseCommand):
                         account=None,
                         source_file=str(csv_path),
                         source_institution=source,
+                        source_profile=profile,
                         file_hash=file_hash,
                         row_count=len(rows),
                     )
@@ -127,7 +133,7 @@ class Command(BaseCommand):
                 imported_count += 1
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f"  [{source:6s}]  {csv_path}  (imported {len(rows)} rows)"
+                        f"  [{source:6s}/{profile}]  {csv_path}  (imported {len(rows)} rows)"
                     )
                 )
             except (LoaderError, NotImplementedError) as exc:

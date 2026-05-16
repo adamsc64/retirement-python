@@ -34,6 +34,9 @@ class LoaderError(Exception):
 class BaseLoader:
     source_institution: str = ""
 
+    def __init__(self, *, default_currency: str = "USD"):
+        self.default_currency = default_currency
+
     def validate_headers(self, headers: list[str]) -> None:
         """Verify that *headers* match the expected columns for this source.
 
@@ -150,7 +153,7 @@ class CitiLoader(BaseLoader):
                         "posted_date": posted_date,
                         "description_raw": raw["Description"].strip(),
                         "amount": amount,
-                        "currency": "USD",
+                        "currency": self.default_currency,
                         "direction": direction,
                     }
                 )
@@ -162,20 +165,110 @@ class HSBCLoader(BaseLoader):
     source_institution = "hsbc"
 
     def validate_headers(self, headers: list[str]) -> None:
-        raise NotImplementedError
+        # HSBC sample exports currently have no header row.
+        if headers:
+            raise LoaderError("HSBC CSV expected no header row")
 
     def parse_rows(self, file_path: Path) -> list[dict]:
-        raise NotImplementedError
+        rows: list[dict] = []
+        date_formats = ["%d/%m/%Y", "%m/%d/%Y"]
+        if self.default_currency != "GBP":
+            date_formats = ["%m/%d/%Y", "%d/%m/%Y"]
+
+        with open(file_path, newline="", encoding="utf-8-sig") as fh:
+            reader = csv.reader(fh)
+            for raw in reader:
+                if len(raw) < 3:
+                    continue
+                date_raw = raw[0].strip()
+                description = raw[1].strip()
+                amount_raw = raw[2].replace(",", "").strip()
+                if not (date_raw or description or amount_raw):
+                    continue
+
+                posted_date = None
+                for fmt in date_formats:
+                    try:
+                        posted_date = datetime.strptime(date_raw, fmt).date()
+                        break
+                    except ValueError:
+                        continue
+                if posted_date is None:
+                    raise LoaderError(
+                        f"Cannot parse date '{date_raw}' in {file_path.name}"
+                    )
+
+                try:
+                    amount = Decimal(amount_raw)
+                except InvalidOperation as exc:
+                    raise LoaderError(
+                        f"Cannot parse amount '{amount_raw}' in {file_path.name}: {exc}"
+                    ) from exc
+
+                rows.append(
+                    {
+                        "posted_date": posted_date,
+                        "description_raw": description,
+                        "amount": amount,
+                        "currency": self.default_currency,
+                        "direction": "credit" if amount > 0 else "debit",
+                    }
+                )
+
+        return rows
 
 
 class AmexLoader(BaseLoader):
     source_institution = "amex"
+    EXPECTED_HEADERS = {"Date", "Description", "Amount"}
 
     def validate_headers(self, headers: list[str]) -> None:
-        raise NotImplementedError
+        actual = {h for h in headers if h}
+        missing = self.EXPECTED_HEADERS - actual
+        if missing:
+            raise LoaderError(
+                f"Amex CSV is missing expected headers: {sorted(missing)}"
+            )
 
     def parse_rows(self, file_path: Path) -> list[dict]:
-        raise NotImplementedError
+        rows: list[dict] = []
+
+        with open(file_path, newline="", encoding="utf-8-sig") as fh:
+            reader = csv.DictReader(fh)
+            self.validate_headers(reader.fieldnames or [])
+
+            for raw in reader:
+                date_raw = (raw.get("Date") or "").strip()
+                description = (raw.get("Description") or "").strip()
+                amount_raw = (raw.get("Amount") or "").replace(",", "").strip()
+                if not (date_raw or description or amount_raw):
+                    continue
+
+                try:
+                    posted_date = datetime.strptime(date_raw, "%d/%m/%Y").date()
+                except ValueError as exc:
+                    raise LoaderError(
+                        f"Cannot parse date '{date_raw}' in {file_path.name}: {exc}"
+                    ) from exc
+
+                try:
+                    amount = -Decimal(amount_raw)
+                except InvalidOperation as exc:
+                    raise LoaderError(
+                        f"Cannot parse amount '{amount_raw}' in {file_path.name}: {exc}"
+                    ) from exc
+
+                rows.append(
+                    {
+                        "posted_date": posted_date,
+                        "description_raw": description,
+                        "amount": amount,
+                        "currency": self.default_currency,
+                        "direction": "credit" if amount > 0 else "debit",
+                    }
+                )
+
+        return rows
 
 
 class WiseLoader(BaseLoader):

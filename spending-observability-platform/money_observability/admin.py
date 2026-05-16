@@ -12,9 +12,17 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(ImportBatch)
 class ImportBatchAdmin(admin.ModelAdmin):
-    list_display = ["source_file", "source_institution", "account", "imported_at", "row_count", "file_hash"]
-    list_filter = ["source_institution"]
-    search_fields = ["source_file", "source_institution", "file_hash"]
+    list_display = [
+        "source_file",
+        "source_institution",
+        "source_profile",
+        "account",
+        "imported_at",
+        "row_count",
+        "file_hash",
+    ]
+    list_filter = ["source_institution", "source_profile"]
+    search_fields = ["source_file", "source_institution", "source_profile", "file_hash"]
     readonly_fields = ["imported_at", "file_hash"]
 
 

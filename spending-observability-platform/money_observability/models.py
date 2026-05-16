@@ -45,6 +45,7 @@ class ImportBatch(models.Model):
     )
     source_file = models.CharField(max_length=500)
     source_institution = models.CharField(max_length=100)
+    source_profile = models.CharField(max_length=100, blank=True, default="")
     imported_at = models.DateTimeField(auto_now_add=True)
     file_hash = models.CharField(max_length=64, unique=True)
     row_count = models.IntegerField(default=0)

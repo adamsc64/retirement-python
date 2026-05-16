@@ -436,5 +436,6 @@ python manage.py import_transactions data/raw --apply
 Current status:
 
 - Citi loader parses and imports rows into ImportBatch and RawTransaction.
+- Currency inference is directory-based (`data/raw/<source>/<currency>/...`), e.g. `amex/gbp` or `hsbc/gbp`; missing currency directory defaults to USD.
 - Other sources are detected but skipped until their loaders are implemented.
 - Duplicate imports are prevented by file hash.
