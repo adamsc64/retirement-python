@@ -343,6 +343,7 @@ class WiseLoader(BaseLoader):
 
                 rows.append(
                     {
+                        "source_native_id": (raw.get("ID") or "").strip(),
                         "posted_date": posted_date,
                         "description_raw": description,
                         "amount": amount,

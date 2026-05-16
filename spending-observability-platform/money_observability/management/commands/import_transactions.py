@@ -6,6 +6,7 @@ Parsing is not yet implemented.
 
 from __future__ import annotations
 
+import hashlib
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -13,7 +14,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from money_observability.models import ImportBatch, RawTransaction
+from money_observability.models import Account, ImportBatch, RawTransaction, Transaction
 from money_observability.services.import_service import (
     compute_file_hash,
     infer_source_metadata_from_path,
@@ -45,6 +46,23 @@ class Command(BaseCommand):
 
     def _row_to_json(self, row: dict) -> dict:
         return {key: self._to_jsonable(value) for key, value in row.items()}
+
+    def _source_row_key(self, *, file_hash: str, row_number: int) -> str:
+        # Provenance identity: one source row in one imported file maps to one source_row_key.
+        seed = f"{file_hash}:{row_number}".encode("utf-8")
+        return hashlib.sha256(seed).hexdigest()
+
+    def _event_fingerprint(self, *, account_identifier: str, row: dict) -> str:
+        # Semantic match key (non-unique): useful later for overlap/candidate duplicate analysis.
+        parts = [
+            account_identifier,
+            row["posted_date"].isoformat(),
+            row.get("description_raw", "").strip().lower(),
+            str(row["amount"]),
+            row.get("currency", "").upper(),
+            row.get("direction", "").lower(),
+        ]
+        return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
     def handle(self, *args, **options):
         data_dir = Path(options["data_dir"])
@@ -112,8 +130,17 @@ class Command(BaseCommand):
                     continue
 
                 with transaction.atomic():
+                    account, _ = Account.objects.get_or_create(
+                        institution=source,
+                        account_identifier=profile,
+                        defaults={
+                            "name": f"{source.upper()} {profile.upper()}",
+                            "currency": source_meta.default_currency,
+                        },
+                    )
+
                     batch = ImportBatch.objects.create(
-                        account=None,
+                        account=account,
                         source_file=str(csv_path),
                         source_institution=source,
                         source_profile=profile,
@@ -129,6 +156,37 @@ class Command(BaseCommand):
                         for index, row in enumerate(rows, start=1)
                     ]
                     RawTransaction.objects.bulk_create(raw_rows)
+
+                    persisted_raw_rows = list(
+                        RawTransaction.objects.filter(import_batch=batch).order_by("row_number")
+                    )
+                    transactions: list[Transaction] = []
+                    for row, raw_row in zip(rows, persisted_raw_rows, strict=True):
+                        transactions.append(
+                            Transaction(
+                                source_row_key=self._source_row_key(
+                                    file_hash=file_hash,
+                                    row_number=raw_row.row_number,
+                                ),
+                                event_fingerprint=self._event_fingerprint(
+                                    account_identifier=account.account_identifier,
+                                    row=row,
+                                ),
+                                source_native_id=str(row.get("source_native_id", "")).strip(),
+                                import_batch=batch,
+                                raw_transaction=raw_row,
+                                account=account,
+                                source_file=str(csv_path),
+                                source_institution=source,
+                                posted_date=row["posted_date"],
+                                description_raw=row.get("description_raw", ""),
+                                description_clean=row.get("description_raw", ""),
+                                amount=row["amount"],
+                                currency=row.get("currency", source_meta.default_currency),
+                                direction=row["direction"],
+                            )
+                        )
+                    Transaction.objects.bulk_create(transactions)
 
                 imported_count += 1
                 self.stdout.write(

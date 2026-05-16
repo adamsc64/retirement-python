@@ -435,7 +435,32 @@ python manage.py import_transactions data/raw --apply
 
 Current status:
 
-- Citi loader parses and imports rows into ImportBatch and RawTransaction.
+- Citi, Amex, HSBC, and Wise loaders parse and import rows.
+- `import_transactions --apply` now writes all three ingestion layers:
+  - `ImportBatch` (file-level audit/provenance)
+  - `RawTransaction` (source-row capture)
+  - `Transaction` (canonical rows for downstream analysis)
 - Currency inference is directory-based (`data/raw/<source>/<currency>/...`), e.g. `amex/gbp` or `hsbc/gbp`; missing currency directory defaults to USD.
-- Other sources are detected but skipped until their loaders are implemented.
 - Duplicate imports are prevented by file hash.
+
+### Verify imported row counts
+
+Use `verify` to reconcile parser output with stored import data.
+
+```bash
+python manage.py verify
+python manage.py verify data/raw/wise/wise.csv
+python manage.py verify data/raw/citi data/raw/wise/wise.csv
+```
+
+`verify` fails when counts do not match, when imports are missing, or when parser/loading errors occur.
+
+### Transaction identity model
+
+The ingestion model separates source-row identity from semantic matching:
+
+- `source_row_key` (unique): provenance identity for one imported source row.
+- `event_fingerprint` (non-unique): semantic matching key for overlap/candidate duplicate analysis.
+
+This avoids collapsing legitimate repeated purchases (for example, two same-day coffees with the same amount and merchant).
+

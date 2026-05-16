@@ -33,6 +33,12 @@ class Account(models.Model):
 
     class Meta:
         ordering = ["institution", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["institution", "account_identifier"],
+                name="uniq_account_institution_identifier",
+            )
+        ]
 
 
 class ImportBatch(models.Model):
@@ -76,7 +82,9 @@ class RawTransaction(models.Model):
 
 
 class Transaction(models.Model):
-    transaction_key = models.CharField(max_length=64, unique=True)
+    source_row_key = models.CharField(max_length=64, unique=True)
+    event_fingerprint = models.CharField(max_length=64, db_index=True, blank=True, default="")
+    source_native_id = models.CharField(max_length=200, db_index=True, blank=True, default="")
     import_batch = models.ForeignKey(
         ImportBatch,
         on_delete=models.CASCADE,

@@ -46,7 +46,14 @@ class TransactionAdmin(admin.ModelAdmin):
         "source_institution",
     ]
     list_filter = ["source_institution", "currency", "direction", "posted_date"]
-    search_fields = ["description_raw", "description_clean", "transaction_key", "source_file"]
-    readonly_fields = ["created_at", "updated_at", "transaction_key"]
+    search_fields = [
+        "description_raw",
+        "description_clean",
+        "source_row_key",
+        "event_fingerprint",
+        "source_native_id",
+        "source_file",
+    ]
+    readonly_fields = ["created_at", "updated_at", "source_row_key", "event_fingerprint"]
     raw_id_fields = ["import_batch", "raw_transaction", "account"]
     date_hierarchy = "posted_date"
