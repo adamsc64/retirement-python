@@ -42,10 +42,19 @@ class TransactionAdmin(admin.ModelAdmin):
         "amount",
         "currency",
         "direction",
+        "excluded",
+        "exclusion_reason",
         "account",
         "source_institution",
     ]
-    list_filter = ["source_institution", "currency", "direction", "posted_date"]
+    list_filter = [
+        "source_institution",
+        "currency",
+        "direction",
+        "excluded",
+        "exclusion_reason",
+        "posted_date",
+    ]
     search_fields = [
         "description_raw",
         "description_clean",
@@ -54,6 +63,12 @@ class TransactionAdmin(admin.ModelAdmin):
         "source_native_id",
         "source_file",
     ]
-    readonly_fields = ["created_at", "updated_at", "source_row_key", "event_fingerprint"]
+    readonly_fields = [
+        "created_at",
+        "updated_at",
+        "source_row_key",
+        "event_fingerprint",
+        "excluded_at",
+    ]
     raw_id_fields = ["import_batch", "raw_transaction", "account"]
     date_hierarchy = "posted_date"

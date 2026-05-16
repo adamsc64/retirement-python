@@ -1,0 +1,31 @@
+exclusions:
+  - id: credit_card_payment
+    name: credit card payment
+    reason: credit_card_payment
+    match:
+      description_contains:
+        - payment thank you
+        - autopay
+
+  - id: internal_transfer
+    name: internal transfer
+    reason: internal_transfer
+    match:
+      description_contains:
+        - transfer to
+        - transfer from
+
+  - id: wise_transfer
+    name: wise transfer
+    reason: wise_transfer
+    match:
+      description_contains:
+        - wise
+        - transferwise
+
+  - id: investment_transfer
+    name: investment transfer
+    reason: investment_transfer
+    match:
+      description_contains:
+        - vanguard

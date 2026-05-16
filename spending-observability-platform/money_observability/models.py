@@ -113,6 +113,10 @@ class Transaction(models.Model):
     original_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     original_currency = models.CharField(max_length=3, choices=Currency.choices, blank=True)
     direction = models.CharField(max_length=10, choices=Direction.choices)
+    excluded = models.BooleanField(default=False, db_index=True)
+    exclusion_reason = models.CharField(max_length=100, blank=True, default="")
+    exclusion_rule_id = models.CharField(max_length=100, blank=True, default="")
+    excluded_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
