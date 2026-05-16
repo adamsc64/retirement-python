@@ -88,11 +88,10 @@ validated normalized transaction objects
 SQLite / Django ORM storage
     ↓
 later enrichment:
-    - deduplication
     - exclusions
     - categorization
     ↓
-exports / analysis
+webapp
 ```
 
 ## Canonical transaction model
@@ -197,68 +196,6 @@ A later version can wrap this with a single command:
 
 ```bash
 finance-obs audit --start 2026-04-09 --end 2026-05-09
-```
-
-## SQLite tables
-
-Suggested initial tables:
-
-### `imports`
-
-Tracks imported files.
-
-```sql
-CREATE TABLE imports (
-  id TEXT PRIMARY KEY,
-  source_file TEXT NOT NULL,
-  source_institution TEXT,
-  source_account TEXT,
-  imported_at TEXT NOT NULL,
-  file_hash TEXT NOT NULL
-);
-```
-
-### `transactions_raw`
-
-Stores minimally parsed source rows.
-
-```sql
-CREATE TABLE transactions_raw (
-  id TEXT PRIMARY KEY,
-  import_id TEXT NOT NULL,
-  row_number INTEGER NOT NULL,
-  raw_json TEXT NOT NULL,
-  FOREIGN KEY (import_id) REFERENCES imports(id)
-);
-```
-
-### `transactions`
-
-Stores canonical transaction rows.
-
-```sql
-CREATE TABLE transactions (
-  id TEXT PRIMARY KEY,
-  import_id TEXT NOT NULL,
-  source_file TEXT NOT NULL,
-  source_institution TEXT,
-  source_account TEXT,
-  posted_date TEXT,
-  transaction_date TEXT,
-  description_raw TEXT,
-  description_clean TEXT,
-  merchant TEXT,
-  amount REAL NOT NULL,
-  currency TEXT NOT NULL,
-  amount_gbp REAL,
-  category TEXT,
-  subcategory TEXT,
-  excluded INTEGER NOT NULL DEFAULT 0,
-  exclusion_reason TEXT,
-  review_required INTEGER NOT NULL DEFAULT 0,
-  notes TEXT,
-  FOREIGN KEY (import_id) REFERENCES imports(id)
-);
 ```
 
 ## Rules
