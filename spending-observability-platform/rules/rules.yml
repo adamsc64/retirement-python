@@ -80,6 +80,7 @@ categories:
         - lidl
         - costco
         - wholefoods
+        - jericho cheese
 
   - id: dining
     category: Dining
@@ -110,6 +111,9 @@ categories:
         - taco
         - barbeque
         - bbq
+        - morse bar
+        - najar
+        - peppers
 
   - id: transport
     category: Transport
@@ -160,6 +164,9 @@ categories:
         - guardian
         - substack
         - patreon
+        - t-mobile
+        - verizon
+        - at&t
 
   - id: shopping
     category: Shopping
@@ -193,6 +200,8 @@ categories:
         - mortgage
         - letting
         - property management
+        - carter jonas
+        - public storage
 
   - id: healthcare
     category: Healthcare
@@ -211,6 +220,7 @@ categories:
         - clinic
         - lloyds pharmacy
         - prescription
+        - axa ppp
 
   - id: children_family
     category: Children / Family
@@ -263,3 +273,24 @@ categories:
         - trivago
         - holiday inn
         - premier inn
+
+  - id: utilities
+    category: Utilities
+    match:
+      description_contains:
+        - octopus energy
+        - british gas
+        - eon energy
+        - thames water
+        - severn trent
+        - scottish power
+        - npower
+        - edf energy
+        - oxford city counci
+
+  - id: laundry
+    category: Laundry
+    match:
+      description_contains:
+        - just in time c
+        - zak dry cleaners
