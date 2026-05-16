@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 
 import yaml
@@ -15,6 +16,7 @@ class ExclusionRule:
     description_contains: tuple[str, ...] = ()
     source_institution_in: tuple[str, ...] = ()
     direction_in: tuple[str, ...] = ()
+    amount_is_zero: bool = False
 
 
 def load_exclusion_rules(path: Path) -> list[ExclusionRule]:
@@ -43,6 +45,7 @@ def load_exclusion_rules(path: Path) -> list[ExclusionRule]:
                 direction_in=tuple(
                     s.lower() for s in (match.get("direction_in") or []) if str(s).strip()
                 ),
+                amount_is_zero=bool(match.get("amount_is_zero", False)),
             )
         )
     return rules
@@ -58,5 +61,7 @@ def match_exclusion_rule(tx: Transaction, rule: ExclusionRule) -> bool:
     if rule.source_institution_in and source not in rule.source_institution_in:
         return False
     if rule.direction_in and direction not in rule.direction_in:
+        return False
+    if rule.amount_is_zero and tx.amount != Decimal("0"):
         return False
     return True

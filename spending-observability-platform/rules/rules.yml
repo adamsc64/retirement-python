@@ -5,7 +5,16 @@ exclusions:
     match:
       description_contains:
         - payment thank you
+        - payment received - thank you
+        - american express dd
         - autopay
+
+  - id: p2p_transfer
+    name: peer to peer transfer
+    reason: internal_transfer
+    match:
+      description_contains:
+        - venmo payment
 
   - id: internal_transfer
     name: internal transfer
@@ -22,6 +31,31 @@ exclusions:
       description_contains:
         - wise
         - transferwise
+
+  - id: wise_self_transfer
+    name: wise self transfer
+    reason: internal_transfer
+    match:
+      source_institution_in:
+        - wise
+      description_contains:
+        - christopher robert adams
+        - cash
+
+  - id: hsbc_self_transfer
+    name: hsbc self transfer
+    reason: internal_transfer
+    match:
+      source_institution_in:
+        - hsbc
+      description_contains:
+        - christopher robert cash
+
+  - id: zero_amount_artifact
+    name: zero amount artifact
+    reason: zero_amount_artifact
+    match:
+      amount_is_zero: true
 
   - id: investment_transfer
     name: investment transfer

@@ -17,6 +17,12 @@ class ApplyExclusionsTests(TestCase):
             "--apply",
             stdout=StringIO(),
         )
+        call_command(
+            "import_transactions",
+            str(self.base_dir / "data" / "raw" / "wise"),
+            "--apply",
+            stdout=StringIO(),
+        )
 
     def _make_rules_file(self, content: str) -> Path:
         with tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False) as fh:
@@ -93,3 +99,25 @@ exclusions:
             rules_path.unlink(missing_ok=True)
 
         self.assertEqual(before, after)
+
+    def test_amount_is_zero_rule_excludes_zero_rows(self):
+        rules_path = self._make_rules_file(
+            """
+exclusions:
+  - id: zero_amount_artifact
+    reason: zero_amount_artifact
+    match:
+      amount_is_zero: true
+""".strip()
+        )
+        try:
+            call_command("apply_exclusions", "--rules", str(rules_path), stdout=StringIO())
+        finally:
+            rules_path.unlink(missing_ok=True)
+
+        excluded_zero = Transaction.objects.filter(
+            excluded=True,
+            amount=0,
+            exclusion_rule_id="zero_amount_artifact",
+        ).count()
+        self.assertGreaterEqual(excluded_zero, 1)
