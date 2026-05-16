@@ -38,12 +38,20 @@ class Command(BaseCommand):
             default=None,
             help="Filter to a specific currency (e.g. USD, GBP).",
         )
+        parser.add_argument(
+            "--filter",
+            type=str,
+            default=None,
+            dest="description_filter",
+            help="Case-insensitive substring filter on description.",
+        )
 
     def handle(self, *args, **options):
         limit = options["limit"]
         sort_by = options["sort"]
         source_filter = [s.lower() for s in (options.get("sources") or [])]
         currency_filter = (options.get("currency") or "").upper() or None
+        description_filter = options.get("description_filter") or None
 
         queryset = Transaction.objects.filter(
             excluded=False,
@@ -56,6 +64,9 @@ class Command(BaseCommand):
 
         if currency_filter:
             queryset = queryset.filter(currency=currency_filter)
+
+        if description_filter:
+            queryset = queryset.filter(description_clean__icontains=description_filter)
 
         order_field = "total" if sort_by == "spend" else "-count"
 
