@@ -1,0 +1,69 @@
+	Status		Date			Description			Debit		Credit	
+	Cleared		06-01-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 5032228717			525.00			
+	Cleared		05-27-2022		Transfer to Bankcard 06:12a #6902 ONLINE                     Reference # 010473			312.30			
+	Cleared		05-25-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4999839225			525.00			
+	Cleared		05-19-2022		Transfer From Checking 06:12a #6902 ONLINE                     Reference # 010474					202.87	
+	Cleared		05-18-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4967759023			525.00			
+	Cleared		05-17-2022		Bill Payment SUSIE DILELLA CBOL 10471			1800.00			
+	Cleared		05-12-2022		ACH Electronic Debit - SOUTHERN CONNECT SOUTHERN C 7635238			102.58			
+	Cleared		05-12-2022		ACH Electronic Debit - UINET            WEB_PAY 24953666051122			101.31			
+	Cleared		05-11-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4934261339			525.00			
+	Cleared		05-11-2022		ACH Electronic Debit - LIBERTY MUTUAL   PAYMENT 			12.50			
+	Cleared		05-10-2022		Transfer to Checking 06:41p #6904 ONLINE                     Reference # 009864			4000.00			
+	Cleared		05-05-2022		Transfer From PAYMENT/TRANSFER               010467   DA					1800.00	
+	Cleared		05-05-2022		Transfer From Checking 06:10a #6902 ONLINE                     Reference # 010472					202.87	
+	Cleared		05-04-2022		Transfer From Checking 11:48a #6904 ONLINE                     Reference # 000654					5500.00	
+	Cleared		05-04-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4899455595			525.00			
+	Cleared		04-27-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4861532529			525.00			
+	Cleared		04-27-2022		Transfer to Bankcard 06:17a #6902 ONLINE                     Reference # 010469			312.30			
+	Cleared		04-21-2022		Transfer From Checking 06:11a #6902 ONLINE                     Reference # 010470					202.87	
+	Cleared		04-20-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4830231213			525.00			
+	Cleared		04-18-2022		Bill Payment SUSIE DILELLA CBOL 20220417 010467			1800.00			
+	Cleared		04-13-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4797851793			525.00			
+	Cleared		04-12-2022		ACH Electronic Debit - LIBERTY MUTUAL   PAYMENT 			12.50			
+	Cleared		04-07-2022		Transfer From Checking 06:12a #6902 ONLINE                     Reference # 010468					202.87	
+	Cleared		04-06-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4765798175			525.00			
+	Cleared		03-30-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4728626917			525.00			
+	Cleared		03-28-2022		Transfer to Bankcard 03/27 05:02a #6902 ONLINE                     Reference # 010465			312.30			
+	Cleared		03-24-2022		Transfer From Checking 06:11a #6902 ONLINE                     Reference # 010466					202.87	
+	Cleared		03-23-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4698160769			525.00			
+	Cleared		03-21-2022		Transfer From Checking 03/19 11:46p #6904 ONLINE                     Reference # 009799					6500.00	
+	Cleared		03-17-2022		Bill Payment SUSIE DILELLA CBOL 10463			1800.00			
+	Cleared		03-16-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4666555131			525.00			
+	Cleared		03-10-2022		Transfer From Checking 06:11a #6902 ONLINE                     Reference # 010464					202.87	
+	Cleared		03-10-2022		ACH Electronic Debit - LIBERTY MUTUAL   PAYMENT 			12.50			
+	Cleared		03-09-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4635562223			525.00			
+	Cleared		03-02-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4601319293			525.00			
+	Cleared		02-28-2022		Transfer to Bankcard 02/27 05:02a #6902 ONLINE                     Reference # 010460			312.30			
+	Cleared		02-24-2022		Transfer From Checking 06:13a #6902 ONLINE                     Reference # 010462					202.87	
+	Cleared		02-23-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4566299341			525.00			
+	Cleared		02-17-2022		Bill Payment SUSIE DILELLA CBOL 10459			1800.00			
+	Cleared		02-16-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4535675433			525.00			
+	Cleared		02-10-2022		Transfer From Checking 06:12a #6902 ONLINE                     Reference # 010461					202.87	
+	Cleared		02-10-2022		ACH Electronic Debit - LIBERTY MUTUAL   PAYMENT 			12.50			
+	Cleared		02-09-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4503933677			525.00			
+	Cleared		02-03-2022		Transfer From Checking 01:39p #6904 ONLINE                     Reference # 000096					4000.00	
+	Cleared		02-02-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4470070235			525.00			
+	Cleared		01-27-2022		Transfer to Bankcard 06:12a #6902 ONLINE                     Reference # 010455			312.30			
+	Cleared		01-27-2022		Transfer From Checking 06:11a #6902 ONLINE                     Reference # 010458					202.87	
+	Cleared		01-26-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4436448445			525.00			
+	Cleared		01-19-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4406479533			525.00			
+	Cleared		01-18-2022		Bill Payment SUSIE DILELLA CBOL 20220117 010457			1800.00			
+	Cleared		01-13-2022		Transfer From Checking 06:12a #6902 ONLINE                     Reference # 010456					202.87	
+	Cleared		01-12-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4377254241			525.00			
+	Cleared		01-12-2022		ACH Electronic Debit - LIBERTY MUTUAL   PAYMENT 			12.50			
+	Cleared		01-11-2022		ACH Electronic Debit - UINET            WEB_PAY 24188570011022			82.96			
+	Cleared		01-10-2022		Transfer From Checking 01/09 05:44p #6904 ONLINE                     Reference # 000286					4300.00	
+	Cleared		01-06-2022		ACH Electronic Debit - The Audubon      SIGONFILE 			464.51			
+	Cleared		01-05-2022		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4347072377			525.00			
+	Cleared		12-30-2021		Transfer From Checking 06:11a #6904 ONLINE                     Reference # 010454					202.87	
+	Cleared		12-29-2021		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4314731407			525.00			
+	Cleared		12-27-2021		Transfer to Bankcard 05:02a #6904 ONLINE                     Reference # 010452			312.30			
+	Cleared		12-22-2021		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4284750827			525.00			
+	Cleared		12-16-2021		Transfer From Checking 06:11a #6904 ONLINE                     Reference # 010453					202.87	
+	Cleared		12-15-2021		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4251536127			525.00			
+	Cleared		12-13-2021		ACH Electronic Debit - UINET            WEB_PAY 24009460121021			112.92			
+	Cleared		12-10-2021		ACH Electronic Debit - LIBERTY MUTUAL   PAYMENT 			12.50			
+	Cleared		12-08-2021		ACH Electronic Debit - CHASBK CK WEBXFR TRANSFER 4220469497			525.00			
+	Cleared		12-06-2021		ACH Electronic Debit - The Audubon      SIGONFILE 			2766.05			
+	Cleared		12-02-2021		Transfer From Checking 06:03a #6904 ONLINE                     Reference # 010451					202.87	
