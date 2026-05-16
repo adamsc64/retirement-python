@@ -115,6 +115,8 @@ categories:
         - najar
         - peppers
         - coffee
+        - caffe nero
+        - caffè nero
 
   - id: transport
     category: Transport
@@ -168,6 +170,12 @@ categories:
         - t-mobile
         - verizon
         - at&t
+        - bloomberg
+        - ancestry
+        - openai
+        - google one
+        - 1password
+        - namecheap
 
   - id: shopping
     category: Shopping
@@ -288,6 +296,9 @@ categories:
         - npower
         - edf energy
         - oxford city counci
+        - virgin media
+        - prospect union
+
 
   - id: laundry
     category: Laundry
@@ -295,3 +306,19 @@ categories:
       description_contains:
         - just in time c
         - zak dry cleaners
+        - thomson cleaning
+        - ana cleaner
+
+  - id: entertainment
+    category: Entertainment
+    match:
+      description_contains:
+        - curzon
+        - steam
+        - theatre
+        - theater
+        - cinema
+        - shadowlands
+        - midaticket
+        - ticketmaster
+        - eventbrite
