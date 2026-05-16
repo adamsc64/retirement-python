@@ -28,31 +28,17 @@ Source CSVs are never edited in place.
 
 Every imported file should remain available for re-processing.
 
-```text
-data/
-  raw/
-  normalized/
-  derived/
-```
-
-### Reproducible over pretty
-
-The first version should favour simple Python scripts, SQLite tables, and CSV exports over dashboards.
-
-A boring script that can be rerun is better than a beautiful spreadsheet that quietly rots.
-
 ### Exclusions are first-class
 
 Budget analysis is useless if internal transfers are treated as spending.
 
 The system must explicitly identify and exclude:
 
-- credit card payments
+- credit card balance payments
 - internal account transfers
 - Wise currency movements
 - investment contributions
 - savings movements
-- reimbursements
 - duplicate imports
 
 Each excluded transaction should retain an exclusion reason.
@@ -67,12 +53,6 @@ A transaction should preserve both:
 - the normalised merchant/category assigned by the pipeline
 
 ## Initial scope
-
-Analyse transactions from:
-
-```text
-2026-04-09 through 2026-05-09
-```
 
 Initial data sources may include:
 
@@ -139,7 +119,7 @@ Every source file should be transformed into this shared schema.
 | `exclusion_reason` | Reason for exclusion |
 | `review_required` | Boolean flag for unresolved transactions |
 | `notes` | Manual notes |
-
+****
 ## Spending sign convention
 
 Use the following convention internally:
@@ -441,10 +421,20 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
 
-### Import transactions (dry run — Phase 1)
+### Import transactions
 
 ```bash
 python manage.py import_transactions data/raw
 ```
 
-Phase 1 discovers CSV files and prints what would be imported. Parsing is not yet implemented.
+Dry run is the default. To persist imports:
+
+```bash
+python manage.py import_transactions data/raw --apply
+```
+
+Current status:
+
+- Citi loader parses and imports rows into ImportBatch and RawTransaction.
+- Other sources are detected but skipped until their loaders are implemented.
+- Duplicate imports are prevented by file hash.
