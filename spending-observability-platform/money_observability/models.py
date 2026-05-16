@@ -117,6 +117,9 @@ class Transaction(models.Model):
     exclusion_reason = models.CharField(max_length=100, blank=True, default="")
     exclusion_rule_id = models.CharField(max_length=100, blank=True, default="")
     excluded_at = models.DateTimeField(null=True, blank=True)
+    category = models.CharField(max_length=100, blank=True, default="", db_index=True)
+    category_rule_id = models.CharField(max_length=100, blank=True, default="")
+    categorized_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

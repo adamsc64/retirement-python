@@ -44,6 +44,7 @@ class TransactionAdmin(admin.ModelAdmin):
         "direction",
         "excluded",
         "exclusion_reason",
+        "category",
         "account",
         "source_institution",
     ]
@@ -53,6 +54,7 @@ class TransactionAdmin(admin.ModelAdmin):
         "direction",
         "excluded",
         "exclusion_reason",
+        "category",
         "posted_date",
     ]
     search_fields = [
@@ -69,6 +71,8 @@ class TransactionAdmin(admin.ModelAdmin):
         "source_row_key",
         "event_fingerprint",
         "excluded_at",
+        "categorized_at",
+        "category_rule_id",
     ]
     raw_id_fields = ["import_batch", "raw_transaction", "account"]
     date_hierarchy = "posted_date"

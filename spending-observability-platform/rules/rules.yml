@@ -63,3 +63,203 @@ exclusions:
     match:
       description_contains:
         - vanguard
+
+categories:
+  - id: groceries
+    category: Groceries
+    match:
+      description_contains:
+        - tesco
+        - sainsbury
+        - waitrose
+        - whole foods
+        - trader joe
+        - kroger
+        - walmart grocery
+        - aldi
+        - lidl
+        - costco
+        - wholefoods
+
+  - id: dining
+    category: Dining
+    match:
+      description_contains:
+        - restaurant
+        - cafe
+        - pret
+        - deliveroo
+        - uber eats
+        - doordash
+        - grubhub
+        - just eat
+        - starbucks
+        - mcdonald
+        - chipotle
+        - subway
+        - domino
+        - pizza
+        - sushi
+        - burger
+        - grill
+        - diner
+        - kitchen
+        - bakery
+        - noodle
+        - ramen
+        - taco
+        - barbeque
+        - bbq
+
+  - id: transport
+    category: Transport
+    match:
+      description_contains:
+        - uber
+        - lyft
+        - taxi
+        - tfl
+        - national rail
+        - trainline
+        - eurostar
+        - ryanair
+        - easyjet
+        - british airways
+        - delta
+        - united airlines
+        - american airlines
+        - southwest
+        - spirit airlines
+        - parking
+        - petrol
+        - shell
+        - bp garage
+        - fuel
+
+  - id: subscriptions
+    category: Subscriptions
+    match:
+      description_contains:
+        - netflix
+        - spotify
+        - apple.com/bill
+        - google play
+        - amazon prime
+        - hulu
+        - disney
+        - hbo
+        - youtube premium
+        - dropbox
+        - icloud
+        - microsoft 365
+        - adobe
+        - duolingo
+        - headspace
+        - calm
+        - nytimes
+        - guardian
+        - substack
+        - patreon
+
+  - id: shopping
+    category: Shopping
+    match:
+      description_contains:
+        - amazon
+        - ebay
+        - etsy
+        - asos
+        - zara
+        - h&m
+        - marks and spencer
+        - john lewis
+        - target
+        - nordstrom
+        - gap
+        - uniqlo
+        - nike
+        - adidas
+        - ikea
+        - b&q
+        - home depot
+
+  - id: housing
+    category: Housing
+    match:
+      description_contains:
+        - rent
+        - landlord
+        - estate agent
+        - mortgage
+        - letting
+        - property management
+
+  - id: healthcare
+    category: Healthcare
+    match:
+      description_contains:
+        - pharmacy
+        - chemist
+        - boots
+        - walgreens
+        - cvs pharmacy
+        - nhs
+        - doctor
+        - dentist
+        - optician
+        - hospital
+        - clinic
+        - lloyds pharmacy
+        - prescription
+
+  - id: children_family
+    category: Children / Family
+    match:
+      description_contains:
+        - nursery
+        - childcare
+        - school
+        - toys r us
+        - mothercare
+        - baby
+
+  - id: giving
+    category: Giving
+    match:
+      description_contains:
+        - justgiving
+        - gofundme
+        - charity
+        - donation
+        - donate
+        - red cross
+        - oxfam
+        - unicef
+
+  - id: fees_finance
+    category: Fees / Finance Charges
+    match:
+      description_contains:
+        - interest charge
+        - late fee
+        - overdraft fee
+        - foreign transaction fee
+        - atm fee
+        - monthly fee
+        - annual fee
+        - service charge
+
+  - id: travel
+    category: Travel
+    match:
+      description_contains:
+        - hotel
+        - airbnb
+        - booking.com
+        - hostel
+        - hilton
+        - marriott
+        - expedia
+        - trivago
+        - holiday inn
+        - premier inn
