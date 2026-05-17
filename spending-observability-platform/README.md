@@ -1,6 +1,6 @@
 # Personal Finance Observability Platform
 
-Local-first Django pipeline for importing account/card CSVs, preserving raw records, and marking non-spend transactions with explicit exclusion rules.
+Local-first Django pipeline for importing account/card CSVs, preserving raw records, excluding non-spend flows, and categorizing transactions via rules and a keyboard-driven web UI.
 
 ## Read this first
 
@@ -15,8 +15,10 @@ Local-first Django pipeline for importing account/card CSVs, preserving raw reco
   - `ImportBatch` (file-level audit)
   - `RawTransaction` (source-row capture)
   - `Transaction` (canonical analysis rows)
-- Duplicate imports are prevented by file hash.
-- Rule-based exclusions are available via `apply_exclusions`.
+- Duplicate imports are prevented by file hash; overlapping date-range rows are skipped with a warning.
+- Rule-based exclusions via `apply_exclusions`.
+- Rule-based categorization via `apply_categories`, with `Manual Review` fallback.
+- Web UI at `/` for stats and `/categorize/` for keyboard-driven batch categorization.
 
 ## Setup
 
@@ -25,7 +27,18 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
+python manage.py createsuperuser   # one-time
 ```
+
+## Running the web UI
+
+```bash
+python manage.py runserver
+```
+
+Then open [http://127.0.0.1:8000](http://127.0.0.1:8000). The categorization queue is at `/categorize/`.
+
+Key bindings are shown in the status bar at the bottom of the categorization page.
 
 ## Data layout
 
@@ -84,14 +97,25 @@ Behavior:
 - idempotent on re-run
 - transactions are never deleted, only flagged
 
-## Identity model
+### Apply categories
 
-Canonical identity separates source provenance from semantic matching:
+```bash
+python manage.py apply_categories
+python manage.py apply_categories --dry-run
+python manage.py apply_categories --rules rules/rules.yml
+```
 
-- `source_row_key` (unique): one imported source row
-- `event_fingerprint` (non-unique): semantic candidate matching key
+Transactions that match no rule are set to `Manual Review`. Re-running is idempotent.
 
-This prevents accidental collapsing of legitimate repeated purchases.
+### Review uncategorized transactions
+
+```bash
+python manage.py uncategorized_top_spend
+python manage.py uncategorized_top_spend --sort count
+python manage.py uncategorized_top_spend --filter coffee --limit 20
+```
+
+Shows the most expensive unresolved debit transactions grouped by description and currency.
 
 ## Rule format
 

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Categorization Queue</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+      font-size: 13px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    #header {
+      padding: 10px 16px;
+      background: #181825;
+      border-bottom: 1px solid #313244;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    #header h1 { font-size: 14px; color: #cba6f7; letter-spacing: 0.05em; }
+    #remaining { color: #a6e3a1; }
+
+    /* ── Category button bar ─────────────────────────────────── */
+    #cat-bar {
+      padding: 8px 16px;
+      background: #181825;
+      border-bottom: 1px solid #313244;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .cat-btn {
+      padding: 4px 11px;
+      border: 1px solid #45475a;
+      background: #313244;
+      color: #cdd6f4;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .cat-btn:hover { background: #45475a; border-color: #585b70; }
+    .cat-btn:focus { outline: 2px solid #89b4fa; outline-offset: 1px; }
+    .cat-btn .shortcut {
+      display: inline-block;
+      margin-right: 5px;
+      color: #f38ba8;
+      font-weight: bold;
+      min-width: 10px;
+    }
+
+    /* ── Transaction list ────────────────────────────────────── */
+    #txn-list { flex: 1; overflow-y: auto; }
+
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+
+    th {
+      padding: 6px 12px;
+      text-align: left;
+      color: #585b70;
+      font-weight: normal;
+      border-bottom: 1px solid #313244;
+      position: sticky;
+      top: 0;
+      background: #1e1e2e;
+      white-space: nowrap;
+    }
+    td { padding: 5px 12px; border-bottom: 1px solid #23233a; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+    .col-check  { width: 36px; text-align: center; }
+    .col-check input[type="checkbox"] { pointer-events: none; width: 14px; height: 14px; cursor: default; accent-color: #89b4fa; }
+    .col-date   { width: 152px; }
+    .col-desc   { width: auto; }
+    .col-amount { width: 90px; text-align: right; }
+    .col-curr   { width: 56px; color: #585b70; }
+    .col-src    { width: 70px; color: #585b70; font-size: 11px; }
+
+    tr.txn-row { cursor: default; user-select: none; }
+    tr.txn-row:hover td { background: #2a2a3e; }
+    tr.txn-row.is-cursor td { background: #2d3561; }
+    tr.txn-row.is-selected td { background: #1e3a5f; border-top-color: #1e3a5f; border-bottom-color: #1e3a5f; }
+    tr.txn-row.is-selected td.col-check { color: #89b4fa; font-weight: bold; border-left: 3px solid #89b4fa; }
+    tr.txn-row.is-cursor.is-selected td { background: #2a4f7a; }
+
+    .amount-cell { color: #f38ba8; }
+
+    /* ── Status bar ──────────────────────────────────────────── */
+    #status-bar {
+      padding: 5px 16px;
+      background: #181825;
+      border-top: 1px solid #313244;
+      color: #585b70;
+      font-size: 11px;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    #sel-count { color: #89b4fa; }
+
+    /* ── Toast ───────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 44px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #a6e3a1;
+      color: #1e1e2e;
+      padding: 7px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.visible { opacity: 1; }
+
+    /* ── Empty state ─────────────────────────────────────────── */
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: #585b70;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1>Categorization Queue</h1>
+  <span id="remaining">{{ total_count }} remaining</span>
+</div>
+
+<div id="cat-bar">
+  {% for cat, key in categories_with_keys %}
+  <button class="cat-btn" data-category="{{ cat }}" tabindex="-1">
+    {% if key %}<span class="shortcut">{{ key }}</span>{% endif %}{{ cat }}
+  </button>
+  {% endfor %}
+</div>
+
+<div id="txn-list">
+  {% if transactions %}
+  <table>
+    <colgroup>
+      <col class="col-check">
+      <col class="col-date">
+      <col class="col-desc">
+      <col class="col-amount">
+      <col class="col-curr">
+      <col class="col-src">
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="col-check"></th>
+        <th>Date</th>
+        <th>Description</th>
+        <th style="text-align:right">Amount</th>
+        <th>Curr</th>
+        <th>Source</th>
+      </tr>
+    </thead>
+    <tbody id="txn-body">
+      {% for tx in transactions %}
+      <tr class="txn-row" data-id="{{ tx.id }}">
+        <td class="col-check"><input type="checkbox" tabindex="-1"></td>
+        <td>{{ tx.posted_date|date:"Y-m-d D" }}</td>
+        <td title="{{ tx.description_raw }}">{{ tx.display_desc }}</td>
+        <td class="amount-cell" style="text-align:right">{{ tx.display_amount|floatformat:2 }}</td>
+        <td>{{ tx.currency }}</td>
+        <td>{{ tx.source_institution }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No uncategorized transactions — queue is clear.</div>
+  {% endif %}
+</div>
+
+<div id="status-bar">
+  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign</span>
+  <span id="sel-count"></span>
+</div>
+
+<div id="toast"></div>
+
+{# Hidden form solely to expose the CSRF token to JS #}
+<form id="csrf-holder" style="display:none">{% csrf_token %}</form>
+
+<script>
+(function () {
+  'use strict';
+
+  const CSRF = document.querySelector('#csrf-holder [name=csrfmiddlewaretoken]').value;
+  const CATEGORIES = {{ key_to_category_json|safe }}; // {lowercase_key: category}
+
+  let cursor = 0;
+  const selected = new Set(); // indices into current rows()
+
+  function rows() {
+    return Array.from(document.querySelectorAll('#txn-body .txn-row'));
+  }
+
+  function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+  function refresh() {
+    const rs = rows();
+    rs.forEach((r, i) => {
+      const isSel = selected.has(i);
+      r.classList.toggle('is-cursor',   i === cursor);
+      r.classList.toggle('is-selected', isSel);
+      r.querySelector('.col-check input').checked = isSel;
+    });
+    if (rs[cursor]) rs[cursor].scrollIntoView({ block: 'nearest' });
+    const selEl = document.getElementById('sel-count');
+    selEl.textContent = selected.size ? `${selected.size} selected` : '';
+  }
+
+  function move(delta) {
+    const rs = rows();
+    if (!rs.length) return;
+    cursor = clamp(cursor + delta, 0, rs.length - 1);
+    refresh();
+  }
+
+  function toggleSelect(idx) {
+    selected.has(idx) ? selected.delete(idx) : selected.add(idx);
+    refresh();
+  }
+
+  function selectAll() {
+    const rs = rows();
+    if (selected.size === rs.length) {
+      selected.clear();
+    } else {
+      rs.forEach((_, i) => selected.add(i));
+    }
+    refresh();
+  }
+
+  function clearSelection() { selected.clear(); refresh(); }
+
+  function targetIds() {
+    const rs = rows();
+    const indices = selected.size ? [...selected] : [cursor];
+    return indices
+      .filter(i => i >= 0 && i < rs.length)
+      .map(i => parseInt(rs[i].dataset.id, 10));
+  }
+
+  function categoryForKey(key) {
+    return CATEGORIES[key.toLowerCase()] || null;
+  }
+
+  async function assign(category) {
+    const ids = targetIds();
+    if (!ids.length) return;
+
+    let data;
+    try {
+      const resp = await fetch('/categorize/assign/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF,
+        },
+        body: JSON.stringify({ ids, category }),
+      });
+      data = await resp.json();
+    } catch (err) {
+      showToast('Network error', true);
+      return;
+    }
+
+    if (!data.updated) return;
+
+    // Remove assigned rows from the DOM
+    const idSet = new Set(ids);
+    rows().forEach(r => {
+      if (idSet.has(parseInt(r.dataset.id, 10))) r.remove();
+    });
+
+    // Recompute state
+    selected.clear();
+    const remaining = rows();
+    cursor = clamp(cursor, 0, Math.max(0, remaining.length - 1));
+
+    // Update remaining count
+    const remEl = document.getElementById('remaining');
+    const prev = parseInt(remEl.textContent, 10) || 0;
+    remEl.textContent = `${prev - data.updated} remaining`;
+
+    if (!remaining.length) {
+      const list = document.getElementById('txn-list');
+      list.innerHTML = '<div class="empty-state">No uncategorized transactions — queue is clear.</div>';
+    }
+
+    refresh();
+    showToast(`\u2713 ${data.updated} \u2192 ${category}`);
+  }
+
+  let toastTimer = null;
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('visible'), 1800);
+  }
+
+  // ── Keyboard handler ──────────────────────────────────────────────────────
+  document.addEventListener('keydown', async (e) => {
+    // Prevent space from scrolling the page before any other check
+    if (e.key === ' ' && !e.metaKey && !e.ctrlKey && !e.altKey) e.preventDefault();
+
+    if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    if (e.key === 'j') { e.preventDefault(); move(+1); return; }
+    if (e.key === 'k') { e.preventDefault(); move(-1); return; }
+    if (e.key === ' ' || e.key === 'x') { toggleSelect(cursor); return; }
+    if (e.key === 'a') { e.preventDefault(); selectAll(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); clearSelection(); return; }
+
+    if (/^[a-z]$/i.test(e.key)) {
+      const cat = categoryForKey(e.key);
+      if (cat) { e.preventDefault(); await assign(cat); }
+    }
+  });
+
+  // ── Mouse: click to move cursor + toggle selection ───────────────────────
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('.txn-row');
+    if (!row) return;
+    const rs = rows();
+    const idx = rs.indexOf(row);
+    if (idx === -1) return;
+    cursor = idx;
+    toggleSelect(idx);
+  });
+
+  // ── Category buttons ─────────────────────────────────────────────────────
+  document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      btn.blur(); // return focus to document so keyboard shortcuts keep working
+      await assign(btn.dataset.category);
+    });
+  });
+
+  // Init
+  refresh();
+})();
+</script>
+</body>
+</html>

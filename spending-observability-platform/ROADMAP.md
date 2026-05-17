@@ -1,21 +1,34 @@
 # Roadmap
 
+## Completed
+
+- ✅ CSV importers: Citi, Amex, HSBC, Wise
+- ✅ Three-layer ingestion: `ImportBatch` / `RawTransaction` / `Transaction`
+- ✅ File-hash deduplication (idempotent re-import)
+- ✅ Row-level cross-batch overlap detection (date-range boundary handling)
+- ✅ Rule-based exclusion engine (`apply_exclusions`, `rules/rules.yml`)
+- ✅ Rule-based categorization engine (`apply_categories`, `Manual Review` fallback)
+- ✅ `uncategorized_top_spend` CLI command (sort by spend or count, filter, limit)
+- ✅ Web UI: index page with categorization stats and progress
+- ✅ Web UI: keyboard-driven categorization queue (`/categorize/`)
+- ✅ Django admin with inline category editing
+
 ## Near-term priorities
 
-1. Keep exclusion quality high using explicit rules and verification checks.
-2. Add category assignment rules with a manual-review fallback.
-3. Improve reporting outputs for monthly spending review.
+1. **Monthly spending summary** — category-level totals for a given date range (the last missing v1 output).
+2. **Improve categorization coverage** — continue working through the Manual Review queue to get rule-based coverage as high as possible before relying on the web UI for edge cases.
+3. **Exclusion quality** — review and tighten exclusion rules as new sources are added.
 
 ## Planned analysis outputs
 
 - Imported flow totals
 - Excluded totals and counts by reason
 - True spending totals
-- Category-level spend summary
+- **Category-level spend summary** ← next priority
 - Fixed vs variable spending view
 - Manual review queue for unresolved rows
 
-## Category model (initial)
+## Category model
 
 - Housing
 - Groceries
@@ -23,15 +36,16 @@
 - Transport
 - Subscriptions
 - Shopping
+- Entertainment
+- Laundry
 - Travel
 - Healthcare
-- Children / Family
 - Giving
 - Fees / Finance Charges
 - Other
-- Manual Review
+- Manual Review (sentinel — not a real category)
 
-## Exclusion reasons (initial)
+## Exclusion reasons
 
 - `internal_transfer`
 - `credit_card_payment`
@@ -44,9 +58,8 @@
 - `opening_balance`
 - `unknown_non_spend`
 
-## Not in v1
+## Not in scope
 
-- Web app
 - Cloud sync
 - Plaid integration
 - Envelope budgeting
@@ -58,8 +71,9 @@
 ## Possible later extensions
 
 - Merchant normalization dictionary
-- Multi-currency FX normalization
+- Multi-currency FX normalization (convert all to one currency for summary)
 - Recurring subscription detection
-- Monthly trend reports
+- Monthly trend reports (month-over-month comparison)
 - Beancount or Ledger export
 - Reconciliation against statement balances
+- Promote web UI manual decisions back to `rules.yml` automatically

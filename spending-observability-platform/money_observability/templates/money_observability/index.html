@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finance Observability</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+      font-size: 13px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      padding: 40px 20px;
+    }
+
+    h1 { font-size: 18px; color: #cba6f7; letter-spacing: 0.06em; }
+
+    .stats {
+      display: flex;
+      gap: 24px;
+    }
+
+    .stat {
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 8px;
+      padding: 20px 28px;
+      text-align: center;
+      min-width: 120px;
+    }
+    .stat .value { font-size: 32px; color: #89b4fa; line-height: 1; }
+    .stat .label { margin-top: 6px; color: #585b70; font-size: 11px; }
+
+    .stat.warn .value { color: #f38ba8; }
+    .stat.good .value { color: #a6e3a1; }
+
+    .progress-bar {
+      width: 340px;
+      height: 6px;
+      background: #313244;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #a6e3a1;
+      border-radius: 3px;
+      width: {{ pct }}%;
+      transition: width 0.4s;
+    }
+    .progress-label { color: #585b70; font-size: 11px; text-align: center; margin-top: 4px; }
+
+    nav { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+
+    a.nav-link {
+      display: block;
+      padding: 10px 28px;
+      background: #313244;
+      border: 1px solid #45475a;
+      border-radius: 6px;
+      color: #cdd6f4;
+      text-decoration: none;
+      text-align: center;
+      min-width: 240px;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    a.nav-link:hover { background: #45475a; border-color: #585b70; }
+    a.nav-link .badge {
+      margin-left: 8px;
+      background: #f38ba8;
+      color: #1e1e2e;
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    a.nav-link .sub { display: block; color: #585b70; font-size: 11px; margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+  <h1>Finance Observability</h1>
+
+  <div class="stats">
+    <div class="stat good">
+      <div class="value">{{ categorized }}</div>
+      <div class="label">categorized</div>
+    </div>
+    <div class="stat warn">
+      <div class="value">{{ uncategorized }}</div>
+      <div class="label">uncategorized</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ total }}</div>
+      <div class="label">total debits</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+    </div>
+    <div class="progress-label">{{ pct }}% categorized</div>
+  </div>
+
+  <nav>
+    <a class="nav-link" href="/categorize/">
+      Categorization Queue
+      {% if uncategorized %}<span class="badge">{{ uncategorized }}</span>{% endif %}
+      <span class="sub">j/k · space · 1-0</span>
+    </a>
+    <a class="nav-link" href="/admin/">
+      Django Admin
+      <span class="sub">full data access</span>
+    </a>
+  </nav>
+
+</body>
+</html>
