@@ -186,6 +186,38 @@ class Command(BaseCommand):
                                 direction=row["direction"],
                             )
                         )
+
+                    # Cross-batch overlap check: skip individual transactions whose
+                    # fingerprint already exists from a different import batch.
+                    # This handles the common case of overlapping date ranges (e.g.
+                    # Apr 7–May 7 then May 7–Jun 7) without rejecting the whole file.
+                    # Note: fingerprints are intentionally non-unique within a single
+                    # CSV (two identical purchases on the same day are both kept), but
+                    # across batches a matching fingerprint means a duplicate.
+                    new_fingerprints = [tx.event_fingerprint for tx in transactions]
+                    existing_fingerprints = set(
+                        Transaction.objects
+                        .filter(event_fingerprint__in=new_fingerprints)
+                        .exclude(import_batch=batch)
+                        .values_list("event_fingerprint", flat=True)
+                    )
+                    if existing_fingerprints:
+                        overlap_count = sum(
+                            1 for tx in transactions
+                            if tx.event_fingerprint in existing_fingerprints
+                        )
+                        transactions = [
+                            tx for tx in transactions
+                            if tx.event_fingerprint not in existing_fingerprints
+                        ]
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"  [WARN  ]  {csv_path}  "
+                                f"({overlap_count} overlapping transaction(s) skipped — "
+                                f"already imported from a previous file)"
+                            )
+                        )
+
                     Transaction.objects.bulk_create(transactions)
 
                 imported_count += 1

@@ -41,3 +41,42 @@ class ImportTransactionsIdempotencyTests(TestCase):
         self.assertEqual(RawTransaction.objects.count(), first_raw_rows)
         self.assertEqual(Transaction.objects.count(), first_transactions)
         self.assertIn("Already imported: matching file hash", second_stdout.getvalue())
+
+    def test_overlapping_csv_skips_duplicate_rows_with_warning(self):
+        """A second CSV that shares a boundary transaction with a first CSV
+        should warn and skip only that row, importing the rest cleanly.
+
+        CSV 1 (Apr):  row A, row B
+        CSV 2 (May):  row B (overlap), row C (new)
+
+        Expected: A, B, C all in DB — B appears once, not twice.
+        """
+        import shutil
+        import tempfile
+
+        CSV_HEADER = "Status,Date,Description,Debit,Credit\n"
+        ROW_A = "Cleared,04/15/2026,Coffee Shop,5.00,\n"
+        ROW_B = "Cleared,05/15/2026,Boundary Purchase,12.00,\n"  # the overlap row
+        ROW_C = "Cleared,06/15/2026,New Purchase,8.00,\n"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            dir1 = Path(tmp) / "apr-may" / "citi"
+            dir2 = Path(tmp) / "may-jun" / "citi"
+            dir1.mkdir(parents=True)
+            dir2.mkdir(parents=True)
+
+            (dir1 / "citi-apr-may.csv").write_text(CSV_HEADER + ROW_A + ROW_B)
+            (dir2 / "citi-may-jun.csv").write_text(CSV_HEADER + ROW_B + ROW_C)
+
+            # Import first file
+            call_command("import_transactions", str(dir1), "--apply", stdout=StringIO())
+            self.assertEqual(Transaction.objects.count(), 2)  # A and B
+
+            # Import second file — B is a duplicate, C is new
+            out = StringIO()
+            call_command("import_transactions", str(dir2), "--apply", stdout=out)
+
+        output = out.getvalue()
+        self.assertIn("overlapping transaction(s) skipped", output)
+        # B should not be doubled; C should be added → total 3
+        self.assertEqual(Transaction.objects.count(), 3)
