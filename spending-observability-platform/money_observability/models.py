@@ -82,8 +82,24 @@ class RawTransaction(models.Model):
 
 
 class Transaction(models.Model):
+    # source_row_key: SHA-256 of "{file_hash}:{row_number}". Unique per DB row.
+    # Ties a Transaction back to the exact row in the exact source file it came
+    # from (provenance). Also acts as a DB-level safety net — the unique
+    # constraint makes it impossible to insert the same (file, row) twice even
+    # if the upstream file-hash guard were somehow bypassed.
     source_row_key = models.CharField(max_length=64, unique=True)
+
+    # event_fingerprint: SHA-256 of the transaction's semantic attributes
+    # (account, date, description, amount, currency, direction). NOT unique —
+    # two legitimate purchases with identical attributes on the same day produce
+    # the same fingerprint and that is correct. Used for cross-batch overlap
+    # detection: if a fingerprint from a newly imported file already exists in a
+    # prior batch, that row is skipped as a date-range overlap duplicate.
     event_fingerprint = models.CharField(max_length=64, db_index=True, blank=True, default="")
+
+    # source_native_id: the transaction ID supplied by the bank in the export
+    # file, when one is available. Stored for reference and future use; not yet
+    # used for deduplication because not all loaders/sources provide it.
     source_native_id = models.CharField(max_length=200, db_index=True, blank=True, default="")
     import_batch = models.ForeignKey(
         ImportBatch,
