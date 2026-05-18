@@ -19,6 +19,20 @@ class Direction(models.TextChoices):
     CREDIT = "credit", "Credit"
 
 
+class BudgetTreatment(models.TextChoices):
+    # How a transaction should be counted in spending reports:
+    # ORDINARY  = normal recurring monthly spend (included in baseline burn).
+    # ANNUAL    = paid once a year; amortise over 12 months for planning burn.
+    # IRREGULAR = expected but not monthly (medical, car maintenance, etc.).
+    # ONE_OFF   = non-recurring; exclude from both baseline and planning burn.
+    # UNKNOWN   = not yet classified (default — avoids silently inflating baseline).
+    ORDINARY = "ordinary", "Ordinary monthly"
+    ANNUAL = "annual", "Annual / amortised"
+    IRREGULAR = "irregular", "Irregular expected"
+    ONE_OFF = "one_off", "One-off"
+    UNKNOWN = "unknown", "Unknown"
+
+
 class Account(models.Model):
     institution = models.CharField(max_length=100)
     name = models.CharField(max_length=200)
@@ -136,6 +150,12 @@ class Transaction(models.Model):
     category = models.CharField(max_length=100, blank=True, default="", db_index=True)
     category_rule_id = models.CharField(max_length=100, blank=True, default="")
     categorized_at = models.DateTimeField(null=True, blank=True)
+    budget_treatment = models.CharField(
+        max_length=20,
+        choices=BudgetTreatment.choices,
+        default=BudgetTreatment.UNKNOWN,
+        db_index=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
