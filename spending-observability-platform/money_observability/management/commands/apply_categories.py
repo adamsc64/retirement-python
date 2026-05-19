@@ -24,12 +24,6 @@ class Command(BaseCommand):
             help="Path to rules YAML file (default: rules/rules.yml).",
         )
         parser.add_argument(
-            "--source",
-            action="append",
-            dest="sources",
-            help="Optional source institution filter. Can be specified multiple times.",
-        )
-        parser.add_argument(
             "--dry-run",
             action="store_true",
             help="Show what would change without writing to the database.",
@@ -38,20 +32,20 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         rules_path = Path(options["rules"])
         dry_run = options["dry_run"]
-        source_filter = [s.lower() for s in (options.get("sources") or [])]
 
         try:
             rules = load_category_rules(rules_path)
         except ValueError as exc:
             raise CommandError(str(exc)) from exc
 
-        queryset = Transaction.objects.filter(excluded=False).order_by("id")
-        if source_filter:
-            queryset = queryset.filter(source_institution__in=source_filter)
+        base = Transaction.objects.filter(excluded=False)
 
-        txs = list(queryset)
+        txs = (
+            list(base.filter(categorized_at__isnull=True).order_by("id"))
+            + list(base.filter(category=CATEGORY_MANUAL_REVIEW).order_by("id"))
+        )
         if not txs:
-            self.stdout.write(self.style.WARNING("No non-excluded transactions found."))
+            self.stdout.write(self.style.WARNING("No uncategorised transactions found."))
             return
 
         now = timezone.now()
@@ -74,7 +68,7 @@ class Command(BaseCommand):
 
         if dry_run:
             self.stdout.write(
-                f"Dry run: would update {changed} transaction(s) out of {len(txs)} non-excluded."
+                f"Dry run: would update {changed} transaction(s) out of {len(txs)} uncategorised."
             )
             return
 
@@ -86,6 +80,6 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Applied categories. Updated {changed} transaction(s) out of {len(txs)} non-excluded."
+                f"Applied categories. Updated {changed} transaction(s) out of {len(txs)} uncategorised."
             )
         )

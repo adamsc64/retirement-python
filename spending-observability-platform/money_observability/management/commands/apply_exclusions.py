@@ -10,7 +10,13 @@ from money_observability.services.exclusion_rules import load_exclusion_rules, m
 
 
 class Command(BaseCommand):
-    help = "Apply rule-based exclusions to canonical Transaction rows."
+    help = (
+        "Apply rule-based exclusions to all Transaction rows. "
+        "Excluded transactions are flagged as noise (e.g. internal transfers, credit card "
+        "repayments, zero-amount artefacts) and hidden from spending reports and category "
+        "analysis. Transactions that no longer match any exclusion rule are automatically "
+        "un-excluded. Run this before apply_categories."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
