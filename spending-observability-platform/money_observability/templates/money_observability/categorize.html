@@ -30,6 +30,8 @@
     }
     #header h1 { font-size: 14px; color: #cba6f7; letter-spacing: 0.05em; }
     #remaining { color: #a6e3a1; }
+    #header .home-link { color: #45475a; font-size: 16px; line-height: 1; text-decoration: none; flex-shrink: 0; }
+    #header .home-link:hover { color: #cdd6f4; }
 
     /* ── Category button bar ─────────────────────────────────── */
     #cat-bar {
@@ -154,6 +156,7 @@
 <body>
 
 <div id="header">
+  <a class="home-link" href="/" title="Home">⌂</a>
   <h1>Categorization Queue</h1>
   <select id="view-category-select">
     {% for cat in all_view_categories %}

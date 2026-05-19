@@ -27,6 +27,8 @@
     }
     header h1 { font-size: 18px; color: #cba6f7; letter-spacing: 0.06em; }
     header .back { color: #585b70; font-size: 12px; }
+    header .home-link { color: #45475a; font-size: 18px; line-height: 1; text-decoration: none; flex-shrink: 0; }
+    header .home-link:hover { color: #cdd6f4; }
 
     /* Date range form */
     .range-form {
@@ -174,8 +176,8 @@
 <body>
 
   <header>
+    <a class="home-link" href="/" title="Home">⌂</a>
     <h1>Monthly Summary</h1>
-    <a class="back" href="/">← home</a>
   </header>
 
   <div class="month-shortcuts" id="month-shortcuts"></div>
