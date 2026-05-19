@@ -88,7 +88,7 @@
     .col-curr   { width: 56px; color: #585b70; }
     .col-src    { width: 70px; color: #585b70; font-size: 11px; }
 
-    tr.txn-row { cursor: default; user-select: none; }
+    tr.txn-row { cursor: pointer; user-select: none; }
     tr.txn-row:hover td { background: #2a2a3e; }
     tr.txn-row.is-cursor td { background: #2d3561; }
     tr.txn-row.is-selected td { background: #1e3a5f; border-top-color: #1e3a5f; border-bottom-color: #1e3a5f; }
@@ -343,15 +343,12 @@
     }
   });
 
-  // ── Mouse: click to move cursor + toggle selection ───────────────────────
+  // ── Mouse: click to open admin detail page ──────────────────────────────
   document.addEventListener('click', (e) => {
     const row = e.target.closest('.txn-row');
     if (!row) return;
-    const rs = rows();
-    const idx = rs.indexOf(row);
-    if (idx === -1) return;
-    cursor = idx;
-    toggleSelect(idx);
+    const id = row.dataset.id;
+    window.open(`/admin/money_observability/transaction/${id}/change/`, '_blank');
   });
 
   // ── Category buttons ─────────────────────────────────────────────────────
