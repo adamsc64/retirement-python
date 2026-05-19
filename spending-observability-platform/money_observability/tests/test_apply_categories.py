@@ -6,7 +6,7 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from money_observability.models import Transaction
-from money_observability.services.category_rules import CATEGORY_MANUAL_REVIEW
+from money_observability.services.categories import CATEGORY_MANUAL_REVIEW
 
 
 class ApplyCategoriesTests(TestCase):

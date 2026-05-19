@@ -6,8 +6,7 @@ from pathlib import Path
 import yaml
 
 from money_observability.models import Transaction
-
-CATEGORY_MANUAL_REVIEW = "Manual Review"
+from money_observability.services.categories import CATEGORY_MANUAL_REVIEW
 
 
 @dataclass(frozen=True)

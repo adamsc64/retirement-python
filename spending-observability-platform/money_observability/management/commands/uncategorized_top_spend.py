@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Count, Sum
 
 from money_observability.models import Transaction
-from money_observability.services.category_rules import CATEGORY_MANUAL_REVIEW
+from money_observability.services.categories import CATEGORY_MANUAL_REVIEW
 
 
 class Command(BaseCommand):
