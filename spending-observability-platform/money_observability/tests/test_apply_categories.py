@@ -128,5 +128,5 @@ categories:
         finally:
             rules_path.unlink(missing_ok=True)
 
-        self.assertIn("No non-excluded transactions found", out.getvalue())
+        self.assertIn("No uncategorised transactions found", out.getvalue())
         self.assertFalse(Transaction.objects.filter(category="Other").exists())
