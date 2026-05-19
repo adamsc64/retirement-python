@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monthly Summary</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+      font-size: 13px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      min-height: 100dvh;
+      padding: 40px 32px;
+    }
+
+    a { color: #89b4fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    header h1 { font-size: 18px; color: #cba6f7; letter-spacing: 0.06em; }
+    header .back { color: #585b70; font-size: 12px; }
+
+    /* Date range form */
+    .range-form {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .range-form label { color: #585b70; font-size: 11px; }
+    .range-form input[type="date"] {
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 4px;
+      color: #cdd6f4;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 5px 8px;
+    }
+    .range-form input[type="date"]:focus {
+      outline: none;
+      border-color: #89b4fa;
+    }
+    .range-form button {
+      background: #313244;
+      border: 1px solid #45475a;
+      border-radius: 4px;
+      color: #cdd6f4;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 5px 14px;
+    }
+    .range-form button:hover { background: #45475a; }
+
+    .month-shortcuts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+    .month-shortcuts button {
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 4px;
+      color: #585b70;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 11px;
+      padding: 4px 10px;
+      transition: background 0.1s, border-color 0.1s, color 0.1s;
+    }
+    .month-shortcuts button:hover { background: #313244; border-color: #45475a; color: #cdd6f4; }
+    .month-shortcuts button.active { border-color: #89b4fa; color: #89b4fa; }
+
+    /* Warning banner */
+    .warning {
+      background: #302828;
+      border: 1px solid #f38ba8;
+      border-radius: 6px;
+      color: #f38ba8;
+      font-size: 12px;
+      margin-bottom: 20px;
+      padding: 10px 14px;
+    }
+
+    /* Summary table */
+    .summary-wrap { overflow-x: auto; }
+
+    table {
+      border-collapse: collapse;
+      min-width: 640px;
+      width: 100%;
+    }
+
+    thead th {
+      border-bottom: 1px solid #45475a;
+      color: #585b70;
+      font-size: 11px;
+      font-weight: normal;
+      letter-spacing: 0.08em;
+      padding: 6px 14px;
+      text-align: right;
+      text-transform: uppercase;
+    }
+    thead th:first-child { text-align: left; }
+
+    tbody tr { border-bottom: 1px solid #181825; }
+    tbody tr:hover { background: #24243a; }
+
+    td {
+      padding: 8px 14px;
+      text-align: right;
+      vertical-align: top;
+    }
+    td:first-child { text-align: left; }
+
+    .cat-name { color: #cdd6f4; }
+    .cat-name.manual-review { color: #f38ba8; }
+    a.cat-name { text-decoration: none; }
+    a.cat-name:hover { text-decoration: underline; }
+
+    .currency-block { display: block; line-height: 1.7; }
+
+    .amount { color: #89b4fa; }
+    .amount.zero { color: #313244; }
+    .cur-badge {
+      color: #585b70;
+      font-size: 10px;
+      margin-right: 3px;
+    }
+
+    .count { color: #585b70; font-size: 11px; }
+
+    /* Totals row */
+    tfoot td {
+      border-top: 1px solid #45475a;
+      color: #cba6f7;
+      font-weight: bold;
+      padding: 10px 14px;
+      text-align: right;
+    }
+    tfoot td:first-child { text-align: left; }
+
+    /* Column header hints */
+    .col-hint {
+      display: block;
+      color: #45475a;
+      font-size: 10px;
+      font-weight: normal;
+      letter-spacing: 0;
+      text-transform: none;
+      margin-top: 2px;
+    }
+
+    /* Legend */
+    .legend {
+      color: #45475a;
+      font-size: 11px;
+      line-height: 1.8;
+      margin-top: 24px;
+    }
+    .legend span { color: #585b70; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Monthly Summary</h1>
+    <a class="back" href="/">← home</a>
+  </header>
+
+  <div class="month-shortcuts" id="month-shortcuts"></div>
+
+  <form class="range-form" method="get" id="range-form">
+    <label for="start">from</label>
+    <input id="start" name="start" type="date" value="{{ start|date:'Y-m-d' }}">
+    <label for="end">to</label>
+    <input id="end" name="end" type="date" value="{{ end|date:'Y-m-d' }}">
+    <button type="submit">apply</button>
+  </form>
+
+  <script>
+  (function () {
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const startInput = document.getElementById('start');
+    const endInput = document.getElementById('end');
+    const container = document.getElementById('month-shortcuts');
+
+    // Determine which year to use: prefer the year already in the start input,
+    // fall back to the current year.
+    function activeYear() {
+      const v = startInput.value;
+      if (v && v.length >= 4) return parseInt(v.slice(0, 4), 10);
+      return new Date().getFullYear();
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function lastDay(year, month1) {
+      // month1 is 1-based; Date(year, month, 0) gives last day of previous month.
+      return new Date(year, month1, 0).getDate();
+    }
+
+    function currentActiveMonth() {
+      const s = startInput.value;
+      const e = endInput.value;
+      if (!s || !e) return null;
+      const sy = parseInt(s.slice(0,4),10), sm = parseInt(s.slice(5,7),10), sd = parseInt(s.slice(8,10),10);
+      const ey = parseInt(e.slice(0,4),10), em = parseInt(e.slice(5,7),10), ed = parseInt(e.slice(8,10),10);
+      if (sy !== ey || sm !== em) return null;
+      if (sd !== 1) return null;
+      if (ed !== lastDay(sy, sm)) return null;
+      return sm; // 1-based
+    }
+
+    function renderButtons() {
+      const active = currentActiveMonth();
+      container.innerHTML = '';
+      const year = activeYear();
+      MONTHS.forEach(function(label, i) {
+        const m = i + 1; // 1-based
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = label + ' ' + year;
+        if (m === active) btn.classList.add('active');
+        btn.addEventListener('click', function () {
+          const y = activeYear();
+          startInput.value = y + '-' + pad(m) + '-01';
+          endInput.value   = y + '-' + pad(m) + '-' + pad(lastDay(y, m));
+          renderButtons();
+          document.getElementById('range-form').submit();
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    renderButtons();
+  })();
+  </script>
+
+  {% if unknown_budget_count %}
+  <div class="warning">
+    {{ unknown_budget_count }} transaction{{ unknown_budget_count|pluralize }} have budget treatment = <em>Unknown</em>
+    — they appear in Cash Outflow but not in Baseline or Planning Burn.
+    Set budget treatments in the admin to improve the planning view.
+  </div>
+  {% endif %}
+
+  {% if rows %}
+  <div class="summary-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>
+            Cash Outflow
+            <span class="col-hint">every debit</span>
+          </th>
+          <th>
+            Baseline Burn
+            <span class="col-hint">ordinary only</span>
+          </th>
+          <th>
+            Planning Burn
+            <span class="col-hint">ordinary + annual÷12 + irregular÷12</span>
+          </th>
+          <th>Txns</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>
+              <a class="cat-name {% if row.category == 'Manual Review' %}manual-review{% endif %}"
+                 href="/categorize/?view_category={{ row.category|urlencode }}&start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">
+                {{ row.category }}
+              </a>
+            </td>
+            <td>
+              {% for e in row.entries %}
+                <span class="currency-block">
+                  <span class="cur-badge">{{ e.currency }}</span><span class="amount {% if e.cash == 0 %}zero{% endif %}">{{ e.cash }}</span>
+                </span>
+              {% endfor %}
+            </td>
+            <td>
+              {% for e in row.entries %}
+                <span class="currency-block">
+                  <span class="cur-badge">{{ e.currency }}</span><span class="amount {% if e.baseline == 0 %}zero{% endif %}">{{ e.baseline }}</span>
+                </span>
+              {% endfor %}
+            </td>
+            <td>
+              {% for e in row.entries %}
+                <span class="currency-block">
+                  <span class="cur-badge">{{ e.currency }}</span><span class="amount {% if e.planning == 0 %}zero{% endif %}">{{ e.planning }}</span>
+                </span>
+              {% endfor %}
+            </td>
+            <td>
+              {% for e in row.entries %}
+                <span class="currency-block count">{{ e.count }}</span>
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          <td>
+            {% for t in total_rows %}
+              <span class="currency-block"><span class="cur-badge">{{ t.currency }}</span>{{ t.cash }}</span>
+            {% endfor %}
+          </td>
+          <td>
+            {% for t in total_rows %}
+              <span class="currency-block"><span class="cur-badge">{{ t.currency }}</span>{{ t.baseline }}</span>
+            {% endfor %}
+          </td>
+          <td>
+            {% for t in total_rows %}
+              <span class="currency-block"><span class="cur-badge">{{ t.currency }}</span>{{ t.planning }}</span>
+            {% endfor %}
+          </td>
+          <td>
+            {% for t in total_rows %}
+              <span class="currency-block count">{{ t.count }}</span>
+            {% endfor %}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="legend">
+    <span>Cash Outflow</span> — every non-excluded debit, regardless of budget treatment.<br>
+    <span>Baseline Burn</span> — ordinary recurring monthly spend only.<br>
+    <span>Planning Burn</span> — ordinary + annual amounts ÷ 12 + irregular amounts ÷ 12.
+  </div>
+
+  {% else %}
+  <p style="color:#585b70; margin-top: 32px;">No transactions found for this date range.</p>
+  {% endif %}
+
+</body>
+</html>

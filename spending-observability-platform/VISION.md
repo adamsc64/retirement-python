@@ -46,6 +46,6 @@ Given raw CSV exports for a target month, produce an output that:
 
 1. Separates true spending from non-spend transfers. ✅
 2. Tags every transaction with a category and budget treatment. ⬜ (model in place; coverage and treatment assignment ongoing)
-3. Prints a category-level summary with baseline, planning, and cash figures. ⬜
+3. Displays a category-level summary web view with baseline, planning, and cash figures. ⬜
 
-The pipeline and categorization queue are in place. The remaining gap is the summary report that computes the three views above.
+The pipeline and categorization queue are in place. The remaining gap is the summary web view that computes the three views above.
