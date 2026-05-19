@@ -92,7 +92,7 @@ def assign_category(request):
 
     if not ids or not isinstance(ids, list):
         return JsonResponse({"error": "ids required"}, status=400)
-    if category not in CATEGORY_SET:
+    if category not in CATEGORY_SET and category != CATEGORY_MANUAL_REVIEW:
         return JsonResponse({"error": "invalid category"}, status=400)
     try:
         ids = [int(i) for i in ids]

@@ -211,7 +211,7 @@
 </div>
 
 <div id="status-bar">
-  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign</span>
+  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign &nbsp;·&nbsp; -&nbsp;unassign</span>
   <span id="sel-count"></span>
 </div>
 
@@ -354,6 +354,7 @@
     if (e.key === ' ' || e.key === 'x') { toggleSelect(cursor); return; }
     if (e.key === 'a') { e.preventDefault(); selectAll(); return; }
     if (e.key === 'Escape') { e.preventDefault(); clearSelection(); return; }
+    if (e.key === '-') { e.preventDefault(); await assign('Manual Review'); return; }
 
     if (/^[a-z]$/i.test(e.key)) {
       const cat = categoryForKey(e.key);
