@@ -1,4 +1,5 @@
 import json
+from datetime import date
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -45,7 +46,22 @@ def categorize_queue(request):
     if view_category not in frozenset(all_view_categories):
         view_category = CATEGORY_MANUAL_REVIEW
 
+    start_str = request.GET.get("start", "")
+    end_str = request.GET.get("end", "")
+    try:
+        start = date.fromisoformat(start_str) if start_str else None
+    except ValueError:
+        start = None
+    try:
+        end = date.fromisoformat(end_str) if end_str else None
+    except ValueError:
+        end = None
+
     qs = Transaction.objects.filter(excluded=False, direction="debit")
+    if start:
+        qs = qs.filter(posted_date__gte=start)
+    if end:
+        qs = qs.filter(posted_date__lte=end)
     if view_category != VIEW_ALL:
         qs = qs.filter(category=view_category)
 
@@ -78,6 +94,8 @@ def categorize_queue(request):
             "all_view_categories": all_view_categories,
             "view_all_sentinel": VIEW_ALL,
             "show_category": view_category == VIEW_ALL,
+            "start": start,
+            "end": end,
         },
     )
 
