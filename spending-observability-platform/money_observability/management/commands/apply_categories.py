@@ -28,10 +28,16 @@ class Command(BaseCommand):
             action="store_true",
             help="Show what would change without writing to the database.",
         )
+        parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help="Print each categorisation as it is applied.",
+        )
 
     def handle(self, *args, **options):
         rules_path = Path(options["rules"])
         dry_run = options["dry_run"]
+        verbose = options["verbose"]
 
         try:
             rules = load_category_rules(rules_path)
@@ -65,6 +71,8 @@ class Command(BaseCommand):
                 tx.category = desired_category
                 tx.category_rule_id = desired_rule_id
                 tx.categorized_at = tx.categorized_at or now
+                if verbose:
+                    self.stdout.write(f"  {tx.description_raw} -> {desired_category}")
 
         if dry_run:
             self.stdout.write(
