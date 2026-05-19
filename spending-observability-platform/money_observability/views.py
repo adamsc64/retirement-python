@@ -10,6 +10,7 @@ from .models import Transaction
 from .services.categories import (
     CATEGORIES,
     CATEGORY_MANUAL_REVIEW,
+    CATEGORY_NAMES,
     CATEGORY_SET,
     CATEGORY_TO_KEY,
     KEY_TO_CATEGORY,
@@ -38,9 +39,14 @@ def index(request):
 
 @login_required(login_url="/admin/login/")
 def categorize_queue(request):
+    all_view_categories = [CATEGORY_MANUAL_REVIEW] + CATEGORY_NAMES
+    view_category = request.GET.get("view_category", CATEGORY_MANUAL_REVIEW)
+    if view_category not in frozenset(all_view_categories):
+        view_category = CATEGORY_MANUAL_REVIEW
+
     raw = list(
         Transaction.objects.filter(
-            category=CATEGORY_MANUAL_REVIEW,
+            category=view_category,
             excluded=False,
             direction="debit",
         )
@@ -67,6 +73,8 @@ def categorize_queue(request):
             "categories_with_keys": [(c.name, c.shortcut.upper()) for c in CATEGORIES],
             "key_to_category_json": json.dumps(KEY_TO_CATEGORY),
             "total_count": len(raw),
+            "view_category": view_category,
+            "all_view_categories": all_view_categories,
         },
     )
 
@@ -93,7 +101,6 @@ def assign_category(request):
 
     updated = Transaction.objects.filter(
         id__in=ids,
-        category=CATEGORY_MANUAL_REVIEW,
     ).update(
         category=category,
         categorized_at=timezone.now(),

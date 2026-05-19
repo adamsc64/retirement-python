@@ -129,6 +129,19 @@
     }
     #toast.visible { opacity: 1; }
 
+    /* ── View-category dropdown ──────────────────────────────── */
+    #view-category-select {
+      background: #313244;
+      color: #cdd6f4;
+      border: 1px solid #45475a;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    #view-category-select:focus { outline: 2px solid #89b4fa; outline-offset: 1px; }
+
     /* ── Empty state ─────────────────────────────────────────── */
     .empty-state {
       padding: 60px 20px;
@@ -142,6 +155,11 @@
 
 <div id="header">
   <h1>Categorization Queue</h1>
+  <select id="view-category-select">
+    {% for cat in all_view_categories %}
+    <option value="{{ cat }}"{% if cat == view_category %} selected{% endif %}>{{ cat }}</option>
+    {% endfor %}
+  </select>
   <span id="remaining">{{ total_count }} remaining</span>
 </div>
 
@@ -358,6 +376,13 @@
       btn.blur(); // return focus to document so keyboard shortcuts keep working
       await assign(btn.dataset.category);
     });
+  });
+
+  // ── View-category dropdown ───────────────────────────────────────────────
+  document.getElementById('view-category-select').addEventListener('change', function () {
+    const url = new URL(window.location.href);
+    url.searchParams.set('view_category', this.value);
+    window.location.href = url.toString();
   });
 
   // Init
