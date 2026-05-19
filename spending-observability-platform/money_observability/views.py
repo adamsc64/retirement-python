@@ -39,18 +39,18 @@ def index(request):
 
 @login_required(login_url="/admin/login/")
 def categorize_queue(request):
-    all_view_categories = [CATEGORY_MANUAL_REVIEW] + CATEGORY_NAMES
+    VIEW_ALL = "__all__"
+    all_view_categories = [VIEW_ALL] + [CATEGORY_MANUAL_REVIEW] + CATEGORY_NAMES
     view_category = request.GET.get("view_category", CATEGORY_MANUAL_REVIEW)
     if view_category not in frozenset(all_view_categories):
         view_category = CATEGORY_MANUAL_REVIEW
 
+    qs = Transaction.objects.filter(excluded=False, direction="debit")
+    if view_category != VIEW_ALL:
+        qs = qs.filter(category=view_category)
+
     raw = list(
-        Transaction.objects.filter(
-            category=view_category,
-            excluded=False,
-            direction="debit",
-        )
-        .order_by("posted_date", "description_clean")
+        qs.order_by("posted_date", "description_clean")
         .values(
             "id",
             "posted_date",
@@ -59,6 +59,7 @@ def categorize_queue(request):
             "amount",
             "currency",
             "source_institution",
+            "category",
         )
     )
     for tx in raw:
@@ -75,6 +76,8 @@ def categorize_queue(request):
             "total_count": len(raw),
             "view_category": view_category,
             "all_view_categories": all_view_categories,
+            "view_all_sentinel": VIEW_ALL,
+            "show_category": view_category == VIEW_ALL,
         },
     )
 

@@ -141,7 +141,7 @@
       cursor: pointer;
     }
     #view-category-select:focus { outline: 2px solid #89b4fa; outline-offset: 1px; }
-
+    .col-cat  { width: 160px; color: #a6adc8; font-size: 11px; }
     /* ── Empty state ─────────────────────────────────────────── */
     .empty-state {
       padding: 60px 20px;
@@ -157,7 +157,7 @@
   <h1>Categorization Queue</h1>
   <select id="view-category-select">
     {% for cat in all_view_categories %}
-    <option value="{{ cat }}"{% if cat == view_category %} selected{% endif %}>{{ cat }}</option>
+    <option value="{{ cat }}"{% if cat == view_category %} selected{% endif %}>{% if cat == view_all_sentinel %}ALL TRANSACTIONS{% else %}{{ cat }}{% endif %}</option>
     {% endfor %}
   </select>
   <span id="remaining">{{ total_count }} remaining</span>
@@ -178,6 +178,7 @@
       <col class="col-check">
       <col class="col-date">
       <col class="col-desc">
+      {% if show_category %}<col class="col-cat">{% endif %}
       <col class="col-amount">
       <col class="col-curr">
       <col class="col-src">
@@ -187,6 +188,7 @@
         <th class="col-check"></th>
         <th>Date</th>
         <th>Description</th>
+        {% if show_category %}<th>Category</th>{% endif %}
         <th style="text-align:right">Amount</th>
         <th>Curr</th>
         <th>Source</th>
@@ -198,6 +200,7 @@
         <td class="col-check"><input type="checkbox" tabindex="-1"></td>
         <td>{{ tx.posted_date|date:"Y-m-d D" }}</td>
         <td title="{{ tx.description_raw }}">{{ tx.display_desc }}</td>
+        {% if show_category %}<td class="col-cat">{{ tx.category }}</td>{% endif %}
         <td class="amount-cell" style="text-align:right">{{ tx.display_amount|floatformat:2 }}</td>
         <td>{{ tx.currency }}</td>
         <td>{{ tx.source_institution }}</td>
