@@ -81,6 +81,7 @@ categories:
         - costco
         - wholefoods
         - jericho cheese
+        - co-op
 
   - id: dining
     category: Dining
@@ -142,6 +143,7 @@ categories:
         - shell
         - bp garage
         - fuel
+        - stagecoach
 
   - id: subscriptions
     category: Subscriptions
@@ -176,6 +178,9 @@ categories:
         - google one
         - 1password
         - namecheap
+        - name-cheap.com
+        - fancy hands
+        - three payg recurri
 
   - id: shopping
     category: Shopping
@@ -211,6 +216,7 @@ categories:
         - property management
         - carter jonas
         - public storage
+        - tv licence
 
   - id: healthcare
     category: Healthcare
