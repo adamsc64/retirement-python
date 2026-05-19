@@ -1,6 +1,6 @@
 # Personal Finance Observability Platform
 
-Local-first Django pipeline for importing account/card CSVs, preserving raw records, excluding non-spend flows, and categorizing transactions via rules and a keyboard-driven web UI.
+Local-first Django pipeline for importing, excluding, and categorizing transactions — to produce the spending reports defined in [VISION.md](VISION.md).
 
 ## Read this first
 

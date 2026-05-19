@@ -2,9 +2,15 @@
 
 ## Why this exists
 
-The goal is to answer a simple question with evidence: what am I actually spending?
+The goal is to answer three questions with evidence:
 
-Before budgeting, the system should provide a reliable audit of real cash flow across accounts, cards, and currencies.
+| Report | Definition |
+|--------|------------|
+| **Baseline burn** | What do I spend in a normal month? Ordinary recurring transactions only. |
+| **Planning burn** | What should I budget for? Ordinary + annual spend ÷ 12 + irregular estimate ÷ 12. |
+| **Cash outflow** | What actually left my accounts? Every debit, including one-offs. |
+
+Before budgeting, the system must provide a reliable audit of real cash flow across accounts, cards, and currencies — with each transaction tagged by category and budget treatment so all three views can be computed.
 
 ## Product direction
 
@@ -39,7 +45,7 @@ The system surfaces what it cannot resolve automatically. A fast local web UI le
 Given raw CSV exports for a target month, produce an output that:
 
 1. Separates true spending from non-spend transfers. ✅
-2. Summarizes spending by category. ⬜
-3. Lists unresolved transactions for manual review. ✅
+2. Tags every transaction with a category and budget treatment. ⬜ (model in place; coverage and treatment assignment ongoing)
+3. Prints a category-level summary with baseline, planning, and cash figures. ⬜
 
-The categorization pipeline and web queue are in place. The remaining gap is a printable/viewable monthly category summary.
+The pipeline and categorization queue are in place. The remaining gap is the summary report that computes the three views above.

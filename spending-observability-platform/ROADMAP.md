@@ -19,14 +19,14 @@
 2. **Improve categorization coverage** — continue working through the Manual Review queue to get rule-based coverage as high as possible before relying on the web UI for edge cases.
 3. **Exclusion quality** — review and tighten exclusion rules as new sources are added.
 
-## Planned analysis outputs
+## Target reports
 
-- Imported flow totals
-- Excluded totals and counts by reason
-- True spending totals
-- **Category-level spend summary** ← next priority
-- Fixed vs variable spending view
-- Manual review queue for unresolved rows
+See [VISION.md](VISION.md) for the authoritative list. The immediate next step is the category-level monthly summary command that produces all three views.
+
+- ✅ Imported flow totals
+- ✅ Excluded totals and counts by reason
+- ✅ Manual review queue for unresolved rows
+- ⬜ **Category-level monthly summary** (next priority)
 
 ## Category model
 
