@@ -340,6 +340,9 @@ class WiseLoader(BaseLoader):
                     or counterparty
                     or (raw.get("ID") or "").strip()
                 )
+                category = (raw.get("Category") or "").strip()
+                if category:
+                    description = f"{description} | {category}"
 
                 rows.append(
                     {
