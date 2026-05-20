@@ -315,7 +315,7 @@
 
   function targetIds() {
     const rs = rows();
-    const indices = selected.size ? [...selected] : [cursor];
+    const indices = selected.size ? [...selected] : [];
     return indices
       .filter(i => i >= 0 && i < rs.length)
       .map(i => parseInt(rs[i].dataset.id, 10));
