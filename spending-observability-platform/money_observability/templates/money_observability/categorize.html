@@ -144,6 +144,33 @@
     }
     #view-category-select:focus { outline: 2px solid #89b4fa; outline-offset: 1px; }
     .col-cat  { width: 160px; color: #a6adc8; font-size: 11px; }
+    .col-budg { width: 46px; text-align: center; color: #2d6e5e; font-size: 11px; font-weight: bold; }
+
+    /* ── Budget bar ──────────────────────────────────────────── */
+    #budget-bar {
+      padding: 6px 16px;
+      background: #181825;
+      border-bottom: 1px solid #313244;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    #budget-bar .bar-label { color: #585b70; font-size: 11px; margin-right: 2px; }
+    .budg-btn {
+      padding: 3px 10px;
+      border: 1px solid #45475a;
+      background: #313244;
+      color: #94e2d5;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .budg-btn:hover { background: #45475a; border-color: #585b70; }
+    .budg-btn:focus { outline: 2px solid #94e2d5; outline-offset: 1px; }
+    .budg-btn .shortcut { display: inline-block; margin-right: 5px; color: #f38ba8; font-weight: bold; }
     /* ── Empty state ─────────────────────────────────────────── */
     .empty-state {
       padding: 60px 20px;
@@ -174,6 +201,12 @@
   {% endfor %}
 </div>
 
+<div id="budget-bar">
+  <span class="bar-label">Budget:</span>
+  <button class="budg-btn" data-treatment="annual" tabindex="-1"><span class="shortcut">⇧A</span>Annual</button>
+  <button class="budg-btn" data-treatment="ordinary" tabindex="-1"><span class="shortcut">⇧O</span>Ordinary</button>
+</div>
+
 <div id="txn-list">
   {% if transactions %}
   <table>
@@ -185,6 +218,7 @@
       <col class="col-amount">
       <col class="col-curr">
       <col class="col-src">
+      <col class="col-budg">
     </colgroup>
     <thead>
       <tr>
@@ -195,11 +229,12 @@
         <th style="text-align:right">Amount</th>
         <th>Curr</th>
         <th>Source</th>
+        <th class="col-budg">Budg</th>
       </tr>
     </thead>
     <tbody id="txn-body">
       {% for tx in transactions %}
-      <tr class="txn-row" data-id="{{ tx.id }}">
+      <tr class="txn-row" data-id="{{ tx.id }}" data-budget="{{ tx.budget_treatment }}">
         <td class="col-check"><input type="checkbox" tabindex="-1"></td>
         <td>{{ tx.posted_date|date:"Y-m-d D" }}</td>
         <td title="{{ tx.description_raw }}">{{ tx.display_desc }}</td>
@@ -207,6 +242,7 @@
         <td class="amount-cell" style="text-align:right">{{ tx.display_amount|floatformat:2 }}</td>
         <td>{{ tx.currency }}</td>
         <td>{{ tx.source_institution }}</td>
+        <td class="col-budg">{% if tx.budget_treatment == 'annual' %}A{% elif tx.budget_treatment == 'ordinary' %}O{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -217,7 +253,7 @@
 </div>
 
 <div id="status-bar">
-  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign &nbsp;·&nbsp; -&nbsp;unassign</span>
+  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign &nbsp;·&nbsp; -&nbsp;unassign &nbsp;·&nbsp; ⇧A&nbsp;annual &nbsp;·&nbsp; ⇧O&nbsp;ordinary</span>
   <span id="sel-count"></span>
 </div>
 
@@ -338,6 +374,41 @@
     showToast(`\u2713 ${data.updated} \u2192 ${category}`);
   }
 
+  async function assignBudget(treatment) {
+    const ids = targetIds();
+    if (!ids.length) return;
+
+    let data;
+    try {
+      const resp = await fetch('/categorize/assign-budget/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF,
+        },
+        body: JSON.stringify({ ids, budget_treatment: treatment }),
+      });
+      data = await resp.json();
+    } catch (err) {
+      showToast('Network error', true);
+      return;
+    }
+
+    if (!data.updated) return;
+
+    // Update Budg cells in-place; do NOT remove rows
+    const label = treatment === 'annual' ? 'A' : 'O';
+    const idSet = new Set(ids);
+    rows().forEach(r => {
+      if (idSet.has(parseInt(r.dataset.id, 10))) {
+        r.dataset.budget = treatment;
+        r.querySelector('.col-budg').textContent = label;
+      }
+    });
+
+    showToast(`\u2713 ${data.updated} \u2192 ${treatment}`);
+  }
+
   let toastTimer = null;
   function showToast(msg) {
     const el = document.getElementById('toast');
@@ -362,6 +433,12 @@
     if (e.key === 'Escape') { e.preventDefault(); clearSelection(); return; }
     if (e.key === '-') { e.preventDefault(); await assign('Manual Review'); return; }
 
+    if (e.shiftKey) {
+      if (e.key === 'A') { e.preventDefault(); await assignBudget('annual'); return; }
+      if (e.key === 'O') { e.preventDefault(); await assignBudget('ordinary'); return; }
+      return;
+    }
+
     if (/^[a-z]$/i.test(e.key)) {
       const cat = categoryForKey(e.key);
       if (cat) { e.preventDefault(); await assign(cat); }
@@ -374,6 +451,14 @@
     if (!row) return;
     const id = row.dataset.id;
     window.open(`/admin/money_observability/transaction/${id}/change/`, '_blank');
+  });
+
+  // ── Budget bar buttons ───────────────────────────────────────────────────
+  document.querySelectorAll('.budg-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      assignBudget(btn.dataset.treatment);
+    });
   });
 
   // ── Category buttons ─────────────────────────────────────────────────────

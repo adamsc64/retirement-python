@@ -78,6 +78,7 @@ def categorize_queue(request):
             "currency",
             "source_institution",
             "category",
+            "budget_treatment",
         )
     )
     for tx in raw:
@@ -128,6 +129,33 @@ def assign_category(request):
         category=category,
         categorized_at=timezone.now(),
         category_rule_id="manual_ui",
+    )
+    return JsonResponse({"updated": updated})
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["POST"])
+def assign_budget(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "invalid JSON"}, status=400)
+
+    ids = data.get("ids", [])
+    budget_treatment = data.get("budget_treatment", "")
+
+    if not ids or not isinstance(ids, list):
+        return JsonResponse({"error": "ids required"}, status=400)
+    valid_treatments = {bt.value for bt in BudgetTreatment}
+    if budget_treatment not in valid_treatments:
+        return JsonResponse({"error": "invalid budget_treatment"}, status=400)
+    try:
+        ids = [int(i) for i in ids]
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "invalid ids"}, status=400)
+
+    updated = Transaction.objects.filter(id__in=ids).update(
+        budget_treatment=budget_treatment,
     )
     return JsonResponse({"updated": updated})
 
