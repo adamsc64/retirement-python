@@ -449,6 +449,11 @@
   document.addEventListener('click', (e) => {
     const row = e.target.closest('.txn-row');
     if (!row) return;
+    if (e.target.closest('.col-check')) {
+      const idx = rows().indexOf(row);
+      if (idx !== -1) toggleSelect(idx);
+      return;
+    }
     const id = row.dataset.id;
     window.open(`/admin/money_observability/transaction/${id}/change/`, '_blank');
   });
