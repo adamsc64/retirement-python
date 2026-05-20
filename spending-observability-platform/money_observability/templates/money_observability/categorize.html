@@ -84,11 +84,10 @@
 
     .col-check  { width: 36px; text-align: center; }
     .col-check input[type="checkbox"] { pointer-events: none; width: 14px; height: 14px; cursor: default; accent-color: #89b4fa; }
-    .col-date   { width: 152px; }
+    .col-date   { width: 136px; }
     .col-desc   { width: auto; }
-    .col-amount { width: 90px; text-align: right; }
-    .col-curr   { width: 56px; color: #585b70; }
-    .col-src    { width: 70px; color: #585b70; font-size: 11px; }
+    .col-amount { width: 80px; text-align: right; }
+    .col-curr   { width: 52px; color: #585b70; }
 
     tr.txn-row { cursor: pointer; user-select: none; }
     tr.txn-row:hover td { background: #2a2a3e; }
@@ -143,8 +142,8 @@
       cursor: pointer;
     }
     #view-category-select:focus { outline: 2px solid #89b4fa; outline-offset: 1px; }
-    .col-cat  { width: 160px; color: #a6adc8; font-size: 11px; }
-    .col-budg { width: 46px; text-align: center; color: #2d6e5e; font-size: 11px; font-weight: bold; }
+    .col-cat  { width: 128px; color: #a6adc8; font-size: 11px; }
+    .col-budg { width: 36px; text-align: center; color: #2d6e5e; font-size: 11px; font-weight: bold; }
 
     /* ── Budget bar ──────────────────────────────────────────── */
     #budget-bar {
@@ -203,8 +202,10 @@
 
 <div id="budget-bar">
   <span class="bar-label">Budget:</span>
-  <button class="budg-btn" data-treatment="annual" tabindex="-1"><span class="shortcut">⇧A</span>Annual</button>
-  <button class="budg-btn" data-treatment="ordinary" tabindex="-1"><span class="shortcut">⇧O</span>Ordinary</button>
+  <button class="budg-btn" data-treatment="annual" tabindex="-1" title="Paid once a year; amortised over 12 months for planning burn"><span class="shortcut">⇧A</span>Annual</button>
+  <button class="budg-btn" data-treatment="ordinary" tabindex="-1" title="Normal recurring monthly spend; included in baseline burn"><span class="shortcut">⇧O</span>Ordinary</button>
+  <button class="budg-btn" data-treatment="irregular" tabindex="-1" title="Expected but not monthly (e.g. medical, car maintenance); amortised in planning burn"><span class="shortcut">⇧I</span>Irregular</button>
+  <button class="budg-btn" data-treatment="one_off" tabindex="-1" title="Non-recurring; excluded from both baseline and planning burn"><span class="shortcut">⇧X</span>One-off</button>
 </div>
 
 <div id="txn-list">
@@ -214,10 +215,9 @@
       <col class="col-check">
       <col class="col-date">
       <col class="col-desc">
-      {% if show_category %}<col class="col-cat">{% endif %}
       <col class="col-amount">
       <col class="col-curr">
-      <col class="col-src">
+      {% if show_category %}<col class="col-cat">{% endif %}
       <col class="col-budg">
     </colgroup>
     <thead>
@@ -225,11 +225,10 @@
         <th class="col-check"></th>
         <th>Date</th>
         <th>Description</th>
-        {% if show_category %}<th>Category</th>{% endif %}
         <th style="text-align:right">Amount</th>
         <th>Curr</th>
-        <th>Source</th>
-        <th class="col-budg">Budg</th>
+        {% if show_category %}<th>Category</th>{% endif %}
+        <th class="col-budg"></th>
       </tr>
     </thead>
     <tbody id="txn-body">
@@ -238,11 +237,10 @@
         <td class="col-check"><input type="checkbox" tabindex="-1"></td>
         <td>{{ tx.posted_date|date:"Y-m-d D" }}</td>
         <td title="{{ tx.description_raw }}">{{ tx.display_desc }}</td>
-        {% if show_category %}<td class="col-cat">{{ tx.category }}</td>{% endif %}
         <td class="amount-cell" style="text-align:right">{{ tx.display_amount|floatformat:2 }}</td>
         <td>{{ tx.currency }}</td>
-        <td>{{ tx.source_institution }}</td>
-        <td class="col-budg">{% if tx.budget_treatment == 'annual' %}A{% elif tx.budget_treatment == 'ordinary' %}O{% endif %}</td>
+        {% if show_category %}<td class="col-cat">{{ tx.category }}</td>{% endif %}
+        <td class="col-budg">{% if tx.budget_treatment == 'annual' %}A{% elif tx.budget_treatment == 'ordinary' %}O{% elif tx.budget_treatment == 'irregular' %}I{% elif tx.budget_treatment == 'one_off' %}X{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -253,7 +251,7 @@
 </div>
 
 <div id="status-bar">
-  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign &nbsp;·&nbsp; -&nbsp;unassign &nbsp;·&nbsp; ⇧A&nbsp;annual &nbsp;·&nbsp; ⇧O&nbsp;ordinary</span>
+  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign &nbsp;·&nbsp; -&nbsp;unassign &nbsp;·&nbsp; ⇧A&nbsp;annual &nbsp;·&nbsp; ⇧O&nbsp;ordinary &nbsp;·&nbsp; ⇧I&nbsp;irregular &nbsp;·&nbsp; ⇧X&nbsp;one-off</span>
   <span id="sel-count"></span>
 </div>
 
@@ -397,7 +395,7 @@
     if (!data.updated) return;
 
     // Update Budg cells in-place; do NOT remove rows
-    const label = treatment === 'annual' ? 'A' : 'O';
+    const label = {annual: 'A', ordinary: 'O', irregular: 'I', one_off: 'X'}[treatment] || '';
     const idSet = new Set(ids);
     rows().forEach(r => {
       if (idSet.has(parseInt(r.dataset.id, 10))) {
@@ -436,6 +434,8 @@
     if (e.shiftKey) {
       if (e.key === 'A') { e.preventDefault(); await assignBudget('annual'); return; }
       if (e.key === 'O') { e.preventDefault(); await assignBudget('ordinary'); return; }
+      if (e.key === 'I') { e.preventDefault(); await assignBudget('irregular'); return; }
+      if (e.key === 'X') { e.preventDefault(); await assignBudget('one_off'); return; }
       return;
     }
 
