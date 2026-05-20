@@ -292,7 +292,7 @@ categories:
 
 
   - id: laundry
-    category: Laundry
+    category: Housing
     match:
       description_contains:
         - zak dry cleaners
