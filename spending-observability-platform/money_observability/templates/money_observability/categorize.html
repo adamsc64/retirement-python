@@ -186,7 +186,7 @@
   <h1>Categorization Queue</h1>
   <select id="view-category-select">
     {% for cat in all_view_categories %}
-    <option value="{{ cat }}"{% if cat == view_category %} selected{% endif %}>{% if cat == view_all_sentinel %}ALL TRANSACTIONS{% else %}{{ cat }}{% endif %}</option>
+    <option value="{{ cat }}"{% if cat == view_category %} selected{% endif %}>{% if cat == view_all_sentinel %}-- ALL TRANSACTIONS --{% else %}{{ cat }}{% endif %}</option>
     {% endfor %}
   </select>
   <span id="remaining">{{ total_count }} remaining</span>
