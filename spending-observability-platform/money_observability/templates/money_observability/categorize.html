@@ -378,10 +378,11 @@
 
   // ── Category buttons ─────────────────────────────────────────────────────
   document.querySelectorAll('.cat-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      btn.blur(); // return focus to document so keyboard shortcuts keep working
-      await assign(btn.dataset.category);
+      const url = new URL(window.location.href);
+      url.searchParams.set('view_category', btn.dataset.category);
+      window.location.href = url.toString();
     });
   });
 

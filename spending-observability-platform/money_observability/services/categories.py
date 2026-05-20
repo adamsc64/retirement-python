@@ -29,8 +29,7 @@ class Category:
 # Ordered by expected frequency of use (also controls UI button order).
 # Keyboard conflict notes: P=sho(P)ping, C=health(C)are, V=tra(V)el, I=g(I)ving.
 CATEGORIES: list[Category] = [
-    Category("Dining",                 "d", "restaurants, cafes, takeaways, food delivery"),
-    Category("Groceries",              "g", "supermarkets, food shops"),
+    Category("Food & Drink",           "f", "restaurants, cafes, takeaways, food delivery, supermarkets, food shops"),
     Category("Transport",              "t", "public transit, taxis, rideshares, fuel, parking, buses"),
     Category("Housing",                "h", "rent, utilities, home services, repairs"),
     Category("Subscriptions",          "s", "recurring software, streaming, club memberships"),
@@ -40,7 +39,6 @@ CATEGORIES: list[Category] = [
     Category("Travel",                 "v", "flights, hotels, travel agencies, foreign-trip expenses"),
     Category("Laundry",                "l", "laundry and dry-cleaning services"),
     Category("Giving",                 "i", "charitable donations"),
-    Category("Fees / Finance Charges", "f", "bank fees, interest, ATM fees, FX charges"),
     Category("Other",                  "o", "anything that doesn't fit the above"),
 ]
 

@@ -65,8 +65,8 @@ exclusions:
         - vanguard
 
 categories:
-  - id: groceries
-    category: Groceries
+  - id: food
+    category: Food & Drink
     match:
       description_contains:
         - tesco
@@ -82,11 +82,6 @@ categories:
         - wholefoods
         - jericho cheese
         - co-op
-
-  - id: dining
-    category: Dining
-    match:
-      description_contains:
         - restaurant
         - cafe
         - pret
@@ -263,19 +258,6 @@ categories:
         - red cross
         - oxfam
         - unicef
-
-  - id: fees_finance
-    category: Fees / Finance Charges
-    match:
-      description_contains:
-        - interest charge
-        - late fee
-        - overdraft fee
-        - foreign transaction fee
-        - atm fee
-        - monthly fee
-        - annual fee
-        - service charge
 
   - id: travel
     category: Travel
