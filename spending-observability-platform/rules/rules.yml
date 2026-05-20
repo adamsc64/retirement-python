@@ -119,6 +119,8 @@ categories:
         - caffe nero
         - caffè nero
         - old bookbinders
+        - just in time c
+
 
   - id: transport
     category: Transport
@@ -311,7 +313,6 @@ categories:
     category: Laundry
     match:
       description_contains:
-        - just in time c
         - zak dry cleaners
         - thomson cleaning
         - ana cleaner
