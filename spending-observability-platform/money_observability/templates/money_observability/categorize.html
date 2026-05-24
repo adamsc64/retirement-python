@@ -193,8 +193,8 @@
 </div>
 
 <div id="cat-bar">
-  {% for cat, key in categories_with_keys %}
-  <button class="cat-btn" data-category="{{ cat }}" tabindex="-1">
+  {% for cat, key, hint in categories_with_keys %}
+  <button class="cat-btn" data-category="{{ cat }}" tabindex="-1" title="{{ hint }}">
     {% if key %}<span class="shortcut">{{ key }}</span>{% endif %}{{ cat }}
   </button>
   {% endfor %}
@@ -202,10 +202,10 @@
 
 <div id="budget-bar">
   <span class="bar-label">Budget:</span>
-  <button class="budg-btn" data-treatment="annual" tabindex="-1" title="Paid once a year; amortised over 12 months for planning burn"><span class="shortcut">⇧A</span>Annual</button>
-  <button class="budg-btn" data-treatment="ordinary" tabindex="-1" title="Normal recurring monthly spend; included in baseline burn"><span class="shortcut">⇧O</span>Ordinary</button>
-  <button class="budg-btn" data-treatment="irregular" tabindex="-1" title="Expected but not monthly (e.g. medical, car maintenance); amortised in planning burn"><span class="shortcut">⇧I</span>Irregular</button>
-  <button class="budg-btn" data-treatment="one_off" tabindex="-1" title="Non-recurring; excluded from both baseline and planning burn"><span class="shortcut">⇧X</span>One-off</button>
+  <button class="budg-btn" data-treatment="annual" tabindex="-1" title="{{ budget_hints.annual }}"><span class="shortcut">⇧A</span>Annual</button>
+  <button class="budg-btn" data-treatment="ordinary" tabindex="-1" title="{{ budget_hints.ordinary }}"><span class="shortcut">⇧O</span>Ordinary</button>
+  <button class="budg-btn" data-treatment="irregular" tabindex="-1" title="{{ budget_hints.irregular }}"><span class="shortcut">⇧I</span>Irregular</button>
+  <button class="budg-btn" data-treatment="one_off" tabindex="-1" title="{{ budget_hints.one_off }}"><span class="shortcut">⇧X</span>One-off</button>
 </div>
 
 <div id="txn-list">

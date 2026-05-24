@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from .models import BudgetTreatment, Transaction
+from .models import BudgetTreatment, BUDGET_TREATMENT_HINTS, Transaction
 from .services.categories import (
     CATEGORIES,
     CATEGORY_MANUAL_REVIEW,
@@ -90,7 +90,7 @@ def categorize_queue(request):
         "money_observability/categorize.html",
         {
             "transactions": raw,
-            "categories_with_keys": [(c.name, c.shortcut.upper()) for c in CATEGORIES],
+            "categories_with_keys": [(c.name, c.shortcut.upper(), c.ai_hint) for c in CATEGORIES],
             "key_to_category_json": json.dumps(KEY_TO_CATEGORY),
             "total_count": len(raw),
             "view_category": view_category,
@@ -99,6 +99,7 @@ def categorize_queue(request):
             "show_category": view_category == VIEW_ALL,
             "start": start,
             "end": end,
+            "budget_hints": BUDGET_TREATMENT_HINTS,
         },
     )
 
