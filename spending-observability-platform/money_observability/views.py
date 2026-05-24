@@ -3,13 +3,16 @@ from collections import defaultdict
 from datetime import date
 from decimal import Decimal
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from .models import BudgetTreatment, BUDGET_TREATMENT_HINTS, Transaction
+from .services.import_service import import_uploaded_bytes, ImportSummary
+from .services.loaders import LoaderError
 from .services.categories import (
     CATEGORIES,
     CATEGORY_MANUAL_REVIEW,
@@ -269,4 +272,46 @@ def monthly_summary(request):
         "total_rows": total_rows,
         "unknown_budget_count": unknown_budget_count,
     })
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def upload_csv(request):
+    if request.method == "POST":
+        uploaded = request.FILES.getlist("csv_files")
+        if not uploaded:
+            messages.error(request, "No files selected.")
+            return redirect("upload_csv")
+
+        accepted = []
+        errors = []
+        for f in uploaded:
+            if not f.name.lower().endswith(".csv"):
+                errors.append(f"{f.name}: only .csv files are accepted.")
+                continue
+            try:
+                summary = import_uploaded_bytes(f.read(), f.name)
+            except LoaderError as exc:
+                errors.append(f"{f.name}: {exc}")
+                continue
+            except Exception as exc:
+                errors.append(f"{f.name}: unexpected error \u2014 {exc}")
+                continue
+
+            if summary.imported > 0:
+                note = f"{summary.imported} transaction(s) imported"
+            else:
+                note = "0 new transactions (already imported)"
+            if summary.duplicate:
+                note += f", {summary.duplicate} duplicate(s) skipped"
+            accepted.append(f"{f.name} ({summary.institution} \u00b7 {note})")
+
+        for msg in errors:
+            messages.error(request, msg)
+        if accepted:
+            messages.success(request, f"Processed {len(accepted)} file(s): {', '.join(accepted)}")
+
+        return redirect("upload_csv")
+
+    return render(request, "money_observability/upload.html")
 

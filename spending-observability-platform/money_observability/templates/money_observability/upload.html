@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Upload CSV — Finance Observability</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+      font-size: 13px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding: 40px 20px;
+    }
+
+    h1 { font-size: 18px; color: #cba6f7; letter-spacing: 0.06em; }
+
+    .back {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      color: #585b70;
+      text-decoration: none;
+      font-size: 12px;
+    }
+    .back:hover { color: #cdd6f4; }
+
+    .messages { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 480px; }
+    .msg {
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .msg.success { background: #1e3a2f; border: 1px solid #a6e3a1; color: #a6e3a1; }
+    .msg.error   { background: #3a1e1e; border: 1px solid #f38ba8; color: #f38ba8; }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .drop-zone {
+      width: 100%;
+      border: 2px dashed #45475a;
+      border-radius: 10px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+    .drop-zone.dragover {
+      border-color: #89b4fa;
+      background: #181825;
+    }
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .drop-zone .icon { font-size: 28px; margin-bottom: 10px; }
+    .drop-zone .label { color: #89b4fa; }
+    .drop-zone .hint  { color: #585b70; font-size: 11px; margin-top: 6px; }
+
+    #file-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .file-item {
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .file-item .fname { color: #cdd6f4; }
+    .file-item .fsize { color: #585b70; }
+
+    button[type="submit"] {
+      padding: 10px 32px;
+      background: #313244;
+      border: 1px solid #45475a;
+      border-radius: 6px;
+      color: #cdd6f4;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    button[type="submit"]:hover { background: #45475a; border-color: #585b70; }
+    button[type="submit"]:disabled { opacity: 0.4; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <a class="back" href="/">← home</a>
+
+  <h1>Upload CSV</h1>
+
+  {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+    <div class="msg {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" id="upload-form">
+    {% csrf_token %}
+
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" name="csv_files" id="csv-input" accept=".csv" multiple>
+      <div class="icon">📂</div>
+      <div class="label">click or drag &amp; drop CSV files here</div>
+      <div class="hint">multiple files accepted · .csv only</div>
+    </div>
+
+    <div id="file-list"></div>
+
+    <button type="submit" id="submit-btn" disabled>Upload</button>
+  </form>
+
+  <script>
+    const input = document.getElementById('csv-input');
+    const dropZone = document.getElementById('drop-zone');
+    const fileList = document.getElementById('file-list');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function formatBytes(n) {
+      if (n < 1024) return n + ' B';
+      if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+      return (n / 1048576).toFixed(1) + ' MB';
+    }
+
+    function renderFiles(files) {
+      fileList.innerHTML = '';
+      if (!files.length) { submitBtn.disabled = true; return; }
+      for (const f of files) {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.innerHTML = `<span class="fname">${f.name}</span><span class="fsize">${formatBytes(f.size)}</span>`;
+        fileList.appendChild(item);
+      }
+      submitBtn.disabled = false;
+    }
+
+    input.addEventListener('change', () => renderFiles(Array.from(input.files)));
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const dt = new DataTransfer();
+      for (const f of e.dataTransfer.files) dt.items.add(f);
+      input.files = dt.files;
+      renderFiles(Array.from(input.files));
+    });
+  </script>
+
+</body>
+</html>

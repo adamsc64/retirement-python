@@ -8,4 +8,5 @@ urlpatterns = [
     path("categorize/assign/", views.assign_category, name="assign_category"),
     path("categorize/assign-budget/", views.assign_budget, name="assign_budget"),
     path("summary/", views.monthly_summary, name="monthly_summary"),
+    path("upload/", views.upload_csv, name="upload_csv"),
 ]
