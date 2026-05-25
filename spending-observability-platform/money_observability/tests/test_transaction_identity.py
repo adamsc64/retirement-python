@@ -20,11 +20,11 @@ class TransactionIdentityTests(TestCase):
         )
 
         # Two distinct real-world purchases with same semantic attributes exist in Wise data:
-        # 2026-04-25, Morse Bar, 8.21 GBP, debit.
+        # 2026-04-25, Morse Bar | Trips, 8.21 GBP, debit.
         duplicates = Transaction.objects.filter(
             source_institution="wise",
             posted_date="2026-04-25",
-            description_raw="Morse Bar",
+            description_raw="Morse Bar | Trips",
             amount="-8.21",
             currency="GBP",
             direction="debit",
