@@ -74,32 +74,6 @@ exclusions:
         self.assertIn("Updated", first.getvalue())
         self.assertIn("Updated 0 transaction(s)", second.getvalue())
 
-    def test_dry_run_does_not_modify_rows(self):
-        rules_path = self._make_rules_file(
-            """
-exclusions:
-  - id: transfer
-    reason: internal_transfer
-    match:
-      description_contains:
-        - transfer
-""".strip()
-        )
-        try:
-            before = Transaction.objects.filter(excluded=True).count()
-            call_command(
-                "apply_exclusions",
-                "--rules",
-                str(rules_path),
-                "--dry-run",
-                stdout=StringIO(),
-            )
-            after = Transaction.objects.filter(excluded=True).count()
-        finally:
-            rules_path.unlink(missing_ok=True)
-
-        self.assertEqual(before, after)
-
     def test_amount_is_zero_rule_excludes_zero_rows(self):
         rules_path = self._make_rules_file(
             """

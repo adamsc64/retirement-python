@@ -61,3 +61,41 @@ def match_category_rule(tx: Transaction, rule: CategoryRule) -> bool:
     if rule.direction_in and direction not in rule.direction_in:
         return False
     return True
+
+
+def make_categorizations(queryset, rules_path: Path | None = None) -> int:
+    """Apply category rules to non-excluded transactions in *queryset* and save.
+
+    Targets transactions where ``categorized_at`` is null or category is still
+    ``CATEGORY_MANUAL_REVIEW``.  Returns the number of transactions updated.
+    """
+    from django.utils import timezone
+
+    rules_path = rules_path or Path("rules/rules.yml")
+    rules = load_category_rules(rules_path)
+    base = queryset.filter(excluded=False)
+    txs = (
+        list(base.filter(categorized_at__isnull=True).order_by("id"))
+        + list(base.filter(category=CATEGORY_MANUAL_REVIEW).order_by("id"))
+    )
+    now = timezone.now()
+    to_update: list[Transaction] = []
+
+    for tx in txs:
+        matched_rule = next((r for r in rules if match_category_rule(tx, r)), None)
+        desired_category = matched_rule.category if matched_rule else CATEGORY_MANUAL_REVIEW
+        desired_rule_id = matched_rule.rule_id if matched_rule else ""
+
+        if tx.category != desired_category or tx.category_rule_id != desired_rule_id:
+            tx.category = desired_category
+            tx.category_rule_id = desired_rule_id
+            tx.categorized_at = tx.categorized_at or now
+            to_update.append(tx)
+
+    if to_update:
+        Transaction.objects.bulk_update(
+            to_update,
+            ["category", "category_rule_id", "categorized_at"],
+        )
+
+    return len(to_update)

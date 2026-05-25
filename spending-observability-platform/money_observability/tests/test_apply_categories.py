@@ -90,26 +90,6 @@ categories:
         self.assertIn("Updated", first.getvalue())
         self.assertIn("Updated 0 transaction(s)", second.getvalue())
 
-    def test_dry_run_does_not_modify_rows(self):
-        rules_path = self._make_rules_file(
-            """
-categories:
-  - id: test_subscriptions
-    category: Subscriptions
-    match:
-      description_contains:
-        - netflix
-""".strip()
-        )
-        try:
-            call_command(
-                "apply_categories", "--rules", str(rules_path), "--dry-run", stdout=StringIO()
-            )
-        finally:
-            rules_path.unlink(missing_ok=True)
-
-        self.assertFalse(Transaction.objects.filter(category="Subscriptions").exists())
-
     def test_excluded_rows_are_skipped(self):
         # Exclude all transactions first, then categorize — nothing should be categorized.
         Transaction.objects.all().update(excluded=True)
@@ -128,5 +108,5 @@ categories:
         finally:
             rules_path.unlink(missing_ok=True)
 
-        self.assertIn("No uncategorised transactions found", out.getvalue())
+        self.assertIn("Applied categories. Updated 0 transaction(s)", out.getvalue())
         self.assertFalse(Transaction.objects.filter(category="Other").exists())

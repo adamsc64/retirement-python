@@ -65,3 +65,37 @@ def match_exclusion_rule(tx: Transaction, rule: ExclusionRule) -> bool:
     if rule.amount_is_zero and tx.amount != Decimal("0"):
         return False
     return True
+
+
+def make_exclusions(queryset, rules_path: Path | None = None) -> int:
+    """Apply exclusion rules to *queryset* and save changes.
+
+    Returns the number of transactions whose exclusion state changed.
+    """
+    from django.utils import timezone
+
+    rules_path = rules_path or Path("rules/rules.yml")
+    rules = load_exclusion_rules(rules_path)
+    txs = list(queryset.order_by("id"))
+    now = timezone.now()
+    to_update: list[Transaction] = []
+
+    for tx in txs:
+        matched_rule = next((r for r in rules if match_exclusion_rule(tx, r)), None)
+        if matched_rule is None:
+            desired = (False, "", "", None)
+        else:
+            desired = (True, matched_rule.reason, matched_rule.rule_id, tx.excluded_at or now)
+
+        current = (tx.excluded, tx.exclusion_reason, tx.exclusion_rule_id, tx.excluded_at)
+        if current != desired:
+            tx.excluded, tx.exclusion_reason, tx.exclusion_rule_id, tx.excluded_at = desired
+            to_update.append(tx)
+
+    if to_update:
+        Transaction.objects.bulk_update(
+            to_update,
+            ["excluded", "exclusion_reason", "exclusion_rule_id", "excluded_at"],
+        )
+
+    return len(to_update)
