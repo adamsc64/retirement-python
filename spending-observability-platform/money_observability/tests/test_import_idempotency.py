@@ -4,7 +4,7 @@ from pathlib import Path
 from django.core.management import call_command
 from django.test import TestCase
 
-from money_observability.models import ImportBatch, RawTransaction, Transaction
+from money_observability.models import ImportBatch, Transaction
 
 
 class ImportTransactionsIdempotencyTests(TestCase):
@@ -22,11 +22,9 @@ class ImportTransactionsIdempotencyTests(TestCase):
         )
 
         first_batches = ImportBatch.objects.count()
-        first_raw_rows = RawTransaction.objects.count()
         first_transactions = Transaction.objects.count()
 
         self.assertEqual(first_batches, 4)
-        self.assertEqual(first_raw_rows, 37)
         self.assertEqual(first_transactions, 37)
 
         second_stdout = StringIO()
@@ -38,7 +36,6 @@ class ImportTransactionsIdempotencyTests(TestCase):
         )
 
         self.assertEqual(ImportBatch.objects.count(), first_batches)
-        self.assertEqual(RawTransaction.objects.count(), first_raw_rows)
         self.assertEqual(Transaction.objects.count(), first_transactions)
         self.assertIn("Already imported: matching file hash", second_stdout.getvalue())
 
@@ -51,7 +48,6 @@ class ImportTransactionsIdempotencyTests(TestCase):
 
         Expected: A, B, C all in DB — B appears once, not twice.
         """
-        import shutil
         import tempfile
 
         CSV_HEADER = "Status,Date,Description,Debit,Credit\n"

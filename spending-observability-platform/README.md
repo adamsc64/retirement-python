@@ -11,9 +11,8 @@ Local-first Django pipeline for importing, excluding, and categorizing transacti
 ## Current status
 
 - Citi, Amex, HSBC, and Wise loaders are implemented.
-- `import_transactions --apply` writes all ingestion layers:
+- `import_transactions --apply` writes ingestion layers:
   - `ImportBatch` (file-level audit)
-  - `RawTransaction` (source-row capture)
   - `Transaction` (canonical analysis rows)
 - Duplicate imports are prevented by file hash; overlapping date-range rows are skipped with a warning.
 - Rule-based exclusions via `apply_exclusions`.
@@ -71,16 +70,6 @@ Persist rows:
 ```bash
 python manage.py import_transactions data/raw --apply
 ```
-
-### Verify imports
-
-```bash
-python manage.py verify
-python manage.py verify data/raw/wise/wise.csv
-python manage.py verify data/raw/citi data/raw/wise/wise.csv
-```
-
-`verify` fails when counts do not match, imports are missing, or parser errors occur.
 
 ### Apply exclusions
 

@@ -88,23 +88,6 @@ class ImportBatch(models.Model):
         verbose_name_plural = "import batches"
 
 
-class RawTransaction(models.Model):
-    import_batch = models.ForeignKey(
-        ImportBatch,
-        on_delete=models.CASCADE,
-        related_name="raw_transactions",
-    )
-    row_number = models.IntegerField()
-    raw_json = models.JSONField()
-
-    def __str__(self) -> str:
-        return f"Row {self.row_number} of {self.import_batch}"
-
-    class Meta:
-        ordering = ["import_batch", "row_number"]
-        unique_together = [("import_batch", "row_number")]
-
-
 class Transaction(models.Model):
     # source_row_key: SHA-256 of "{file_hash}:{row_number}". Unique per DB row.
     # Ties a Transaction back to the exact row in the exact source file it came
@@ -129,13 +112,6 @@ class Transaction(models.Model):
         ImportBatch,
         on_delete=models.CASCADE,
         related_name="transactions",
-    )
-    raw_transaction = models.OneToOneField(
-        RawTransaction,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="transaction",
     )
     account = models.ForeignKey(
         Account,

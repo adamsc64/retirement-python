@@ -7,14 +7,12 @@ Parsing is not yet implemented.
 from __future__ import annotations
 
 import hashlib
-from datetime import date, datetime
-from decimal import Decimal
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from money_observability.models import Account, ImportBatch, RawTransaction, Transaction
+from money_observability.models import Account, ImportBatch, Transaction
 from money_observability.services.import_service import (
     compute_file_hash,
     infer_source_metadata_from_path,
@@ -36,16 +34,6 @@ class Command(BaseCommand):
             action="store_true",
             help="Persist imports to the database. Without this flag, command runs in dry-run mode.",
         )
-
-    def _to_jsonable(self, value):
-        if isinstance(value, Decimal):
-            return str(value)
-        if isinstance(value, (date, datetime)):
-            return value.isoformat()
-        return value
-
-    def _row_to_json(self, row: dict) -> dict:
-        return {key: self._to_jsonable(value) for key, value in row.items()}
 
     def _source_row_key(self, *, file_hash: str, row_number: int) -> str:
         # Provenance identity: one source row in one imported file maps to one source_row_key.
@@ -147,45 +135,30 @@ class Command(BaseCommand):
                         file_hash=file_hash,
                         row_count=len(rows),
                     )
-                    raw_rows = [
-                        RawTransaction(
+                    transactions: list[Transaction] = [
+                        Transaction(
+                            source_row_key=self._source_row_key(
+                                file_hash=file_hash,
+                                row_number=index,
+                            ),
+                            event_fingerprint=self._event_fingerprint(
+                                account_identifier=account.account_identifier,
+                                row=row,
+                            ),
+                            source_native_id=str(row.get("source_native_id", "")).strip(),
                             import_batch=batch,
-                            row_number=index,
-                            raw_json=self._row_to_json(row),
+                            account=account,
+                            source_file=str(csv_path),
+                            source_institution=source,
+                            posted_date=row["posted_date"],
+                            description_raw=row.get("description_raw", ""),
+                            description_clean=row.get("description_raw", ""),
+                            amount=row["amount"],
+                            currency=row.get("currency", source_meta.default_currency),
+                            direction=row["direction"],
                         )
                         for index, row in enumerate(rows, start=1)
                     ]
-                    RawTransaction.objects.bulk_create(raw_rows)
-
-                    persisted_raw_rows = list(
-                        RawTransaction.objects.filter(import_batch=batch).order_by("row_number")
-                    )
-                    transactions: list[Transaction] = []
-                    for row, raw_row in zip(rows, persisted_raw_rows, strict=True):
-                        transactions.append(
-                            Transaction(
-                                source_row_key=self._source_row_key(
-                                    file_hash=file_hash,
-                                    row_number=raw_row.row_number,
-                                ),
-                                event_fingerprint=self._event_fingerprint(
-                                    account_identifier=account.account_identifier,
-                                    row=row,
-                                ),
-                                source_native_id=str(row.get("source_native_id", "")).strip(),
-                                import_batch=batch,
-                                raw_transaction=raw_row,
-                                account=account,
-                                source_file=str(csv_path),
-                                source_institution=source,
-                                posted_date=row["posted_date"],
-                                description_raw=row.get("description_raw", ""),
-                                description_clean=row.get("description_raw", ""),
-                                amount=row["amount"],
-                                currency=row.get("currency", source_meta.default_currency),
-                                direction=row["direction"],
-                            )
-                        )
 
                     # Cross-batch overlap check: skip individual transactions whose
                     # fingerprint already exists from a different import batch.

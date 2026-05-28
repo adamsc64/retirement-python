@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Account, ImportBatch, RawTransaction, Transaction
+from .models import Account, ImportBatch, Transaction
 
 
 @admin.register(Account)
@@ -24,14 +24,6 @@ class ImportBatchAdmin(admin.ModelAdmin):
     list_filter = ["source_institution", "source_profile"]
     search_fields = ["source_file", "source_institution", "source_profile", "file_hash"]
     readonly_fields = ["imported_at", "file_hash"]
-
-
-@admin.register(RawTransaction)
-class RawTransactionAdmin(admin.ModelAdmin):
-    list_display = ["import_batch", "row_number"]
-    list_filter = ["import_batch__source_institution"]
-    search_fields = ["import_batch__source_file"]
-    raw_id_fields = ["import_batch"]
 
 
 @admin.register(Transaction)
@@ -74,5 +66,5 @@ class TransactionAdmin(admin.ModelAdmin):
         "categorized_at",
         "category_rule_id",
     ]
-    raw_id_fields = ["import_batch", "raw_transaction", "account"]
+    raw_id_fields = ["import_batch", "account"]
     date_hierarchy = "posted_date"

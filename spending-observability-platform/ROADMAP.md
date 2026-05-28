@@ -3,7 +3,7 @@
 ## Completed
 
 - ✅ CSV importers: Citi, Amex, HSBC, Wise
-- ✅ Three-layer ingestion: `ImportBatch` / `RawTransaction` / `Transaction`
+- ✅ Ingestion layers: `ImportBatch` / `Transaction`
 - ✅ File-hash deduplication (idempotent re-import)
 - ✅ Row-level cross-batch overlap detection (date-range boundary handling)
 - ✅ Rule-based exclusion engine (`apply_exclusions`, `rules/rules.yml`)

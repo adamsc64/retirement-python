@@ -90,22 +90,12 @@ class ImportSummary:
 
 
 # Default currency to assume when institution is known but no path hint exists.
-_UPLOAD_DEFAULT_CURRENCY: dict[str, str] = {
+_UPLOAD_DEFAULT_CURRENCY = {
     "citi": "USD",
     "hsbc": "GBP",
     "amex": "GBP",
     "wise": "GBP",
 }
-
-
-def _row_to_json(row: dict) -> dict:
-    def _jsonable(v):
-        if isinstance(v, Decimal):
-            return str(v)
-        if isinstance(v, (date, datetime)):
-            return v.isoformat()
-        return v
-    return {k: _jsonable(v) for k, v in row.items()}
 
 
 def _source_row_key(file_hash: str, row_number: int) -> str:
@@ -137,7 +127,7 @@ def import_uploaded_bytes(raw_bytes: bytes, filename: str) -> ImportSummary:
     Raises LoaderError if the file cannot be identified or parsed.
     """
     from django.db import transaction as db_transaction
-    from money_observability.models import Account, ImportBatch, RawTransaction, Transaction
+    from money_observability.models import Account, ImportBatch, Transaction
     from .loaders import GenericLoader, LoaderError, LOADER_REGISTRY
 
     sniff_result = GenericLoader().sniff(io.BytesIO(raw_bytes))
@@ -187,21 +177,6 @@ def import_uploaded_bytes(raw_bytes: bytes, filename: str) -> ImportSummary:
             },
         )
 
-        raw_objs = [
-            RawTransaction(
-                import_batch=batch,
-                row_number=i,
-                raw_json=_row_to_json(row),
-            )
-            for i, row in enumerate(rows, start=1)
-        ]
-        RawTransaction.objects.bulk_create(raw_objs, ignore_conflicts=True)
-
-        persisted_raw = {
-            r.row_number: r
-            for r in RawTransaction.objects.filter(import_batch=batch)
-        }
-
         tx_objs = [
             Transaction(
                 source_row_key=_source_row_key(file_hash=file_hash, row_number=i),
@@ -211,7 +186,6 @@ def import_uploaded_bytes(raw_bytes: bytes, filename: str) -> ImportSummary:
                 ),
                 source_native_id=str(row.get("source_native_id", "")).strip(),
                 import_batch=batch,
-                raw_transaction=persisted_raw.get(i),
                 account=account,
                 source_file=filename,
                 source_institution=institution,
