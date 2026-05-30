@@ -23,11 +23,14 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+
+from utils.ai_client import get_ai_client
 
 
 class LoaderError(Exception):
@@ -473,8 +476,17 @@ class SniffResult:
 class GenericLoader:
     """Validate and sniff an uploaded CSV without knowing the institution."""
 
-    # Fields that must be derivable from the file's headers.
+    # Fields that must be derivable from the file's headers, with descriptions
+    # used both for validation error messages and as AI prompt context.
     REQUIRED_FIELDS = {"posted_date", "amount", "description_raw"}
+    FIELD_DESCRIPTIONS: dict[str, str] = {
+        "posted_date": "the date the transaction was posted",
+        "amount": "the monetary amount of the transaction",
+        "description_raw": "the transaction description or merchant name",
+        "currency": "the ISO 4217 currency code (e.g. USD, GBP)",
+        "direction": "debit or credit indicator",
+        "source_native_id": "a unique transaction identifier",
+    }
 
     @staticmethod
     def _looks_like_hsbc(text: str) -> bool:
@@ -501,6 +513,60 @@ class GenericLoader:
             )
         return False
 
+    def get_ai_column_mapping(
+        self, missing: set[str], headers: list[str]
+    ) -> dict[str, str]:
+        """Try to map *missing* required fields to columns using an AI model.
+
+        Returns a ``{normalised_field: raw_column}`` dict for any mappings the
+        model is confident about.  Returns an empty dict silently when
+        ``OPENAI_KEY`` is unset, the ``openai`` package is absent, or the call
+        fails for any reason.
+        """
+        if not missing:
+            return {}
+
+        client = get_ai_client()
+        if client is None:
+            return {}
+
+        system_prompt = """\
+You are a CSV column-mapping assistant for a personal finance application.
+
+Given a list of raw CSV column names and a list of required normalised field \
+names, map each required field to the most likely raw column name.
+
+Rules:
+- Only include a field if you are confident a column matches it.
+- Omit any field for which no column is a plausible match.
+- Output a single JSON object: keys are normalised field names, values are raw \
+column names exactly as given.
+- Output nothing except valid JSON.
+"""
+
+        user_message = json.dumps(
+            {
+                "columns": [h for h in headers if h],
+                "required_fields": {
+                    f: self.FIELD_DESCRIPTIONS.get(f, f) for f in sorted(missing)
+                },
+            },
+            ensure_ascii=False,
+        )
+
+        try:
+            raw = client.get_json_response(system_prompt, user_message)
+        except Exception:
+            return {}
+
+        # Validate: only accept mappings where the column actually exists.
+        header_set = set(headers)
+        return {
+            field: col
+            for field, col in raw.items()
+            if isinstance(field, str) and isinstance(col, str) and col in header_set
+        }
+
     def detect_mapping(self, headers: list[str]) -> ColumnMapping:
         """Return a ColumnMapping for *headers*.
 
@@ -513,6 +579,14 @@ class GenericLoader:
                 grouped.setdefault(norm, []).append(col)
         covered = set(grouped)
         missing = self.REQUIRED_FIELDS - covered
+
+        ai_detected = self.get_ai_column_mapping(missing, headers)
+        if ai_detected:
+            for field, col in ai_detected.items():
+                grouped.setdefault(field, []).append(col)
+            covered = set(grouped)
+            missing = self.REQUIRED_FIELDS - covered
+
         if missing:
             raise LoaderError(
                 f"Cannot map required fields {sorted(missing)} from "

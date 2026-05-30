@@ -8,16 +8,15 @@ silently when it is absent or when the openai package is not installed.
 from __future__ import annotations
 
 import json
-import os
 
 from money_observability.models import Transaction
+from utils.ai_client import AIClient, DEFAULT_MODEL, get_ai_client
 from money_observability.services.categories import (
     CATEGORIES,
     CATEGORY_MANUAL_REVIEW,
     CATEGORY_SET,
 )
 
-MODEL = "gpt-5.4-nano"
 DEFAULT_BATCH_SIZE = 20
 
 _CATEGORY_LIST = "\n".join(f"  - {c.name}: {c.ai_hint}" for c in CATEGORIES)
@@ -50,22 +49,13 @@ def build_user_message(batch: list[Transaction]) -> str:
     return json.dumps(items, ensure_ascii=False)
 
 
-def categorize_batch(client, batch: list[Transaction], model: str) -> dict[str, str]:
-    response = client.chat.completions.create(
-        model=model,
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": build_user_message(batch)},
-        ],
-        temperature=0,
-    )
-    return json.loads(response.choices[0].message.content)
+def categorize_batch(client: AIClient, batch: list[Transaction]) -> dict[str, str]:
+    return client.get_json_response(SYSTEM_PROMPT, build_user_message(batch))
 
 
 def make_ai_categorizations(
     queryset,
-    model: str = MODEL,
+    model: str = DEFAULT_MODEL,
     batch_size: int = DEFAULT_BATCH_SIZE,
 ) -> int:
     """AI-categorize Manual Review transactions in *queryset* and save.
@@ -75,16 +65,9 @@ def make_ai_categorizations(
     """
     from django.utils import timezone
 
-    api_key = os.environ.get("OPENAI_KEY")
-    if not api_key:
+    client = get_ai_client(model=model)
+    if client is None:
         return 0
-
-    try:
-        from openai import OpenAI
-    except ImportError:
-        return 0
-
-    client = OpenAI(api_key=api_key)
     txs = list(
         queryset.filter(category=CATEGORY_MANUAL_REVIEW, excluded=False).order_by("id")
     )
@@ -97,7 +80,7 @@ def make_ai_categorizations(
 
     for batch_start in range(0, len(txs), batch_size):
         batch = txs[batch_start : batch_start + batch_size]
-        results = categorize_batch(client, batch, model)
+        results = categorize_batch(client, batch)
         for tx in batch:
             category = results.get(str(tx.id))
             if category not in valid_set:

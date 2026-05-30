@@ -5,9 +5,9 @@ from django.core.management.base import BaseCommand, CommandError
 from money_observability.models import Transaction
 from money_observability.services.ai_categorize import (
     DEFAULT_BATCH_SIZE,
-    MODEL,
     make_ai_categorizations,
 )
+from utils.ai_client import DEFAULT_MODEL
 
 
 class Command(BaseCommand):
@@ -23,8 +23,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--model",
             type=str,
-            default=MODEL,
-            help=f"OpenAI model to use (default: {MODEL}).",
+            default=DEFAULT_MODEL,
+            help=f"OpenAI model to use (default: {DEFAULT_MODEL}).",
         )
 
     def handle(self, *args, **options):
