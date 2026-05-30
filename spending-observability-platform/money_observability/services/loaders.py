@@ -161,6 +161,50 @@ class CitiLoader(BaseLoader):
         return rows
 
 
+# ---------------------------------------------------------------------------
+# Date-order sniffer
+# ---------------------------------------------------------------------------
+
+
+def sniff_dmy_or_mdy(date_values: list[str]) -> str:
+    """Return "%d/%m/%Y" (European) or "%m/%d/%Y" (US) from *date_values*.
+
+    Strategy:
+    1. Unambiguous probe: if any first field > 12 it must be a day (DMY);
+       if any second field > 12 it must be a day (MDY).
+    2. Sequence analysis: the component with lower total absolute variation
+       across consecutive rows changes more slowly — that is the month.
+
+    Raises LoaderError when the order cannot be determined.
+    """
+    pairs: list[tuple[int, int]] = []
+    for value in date_values:
+        parts = re.split(r"[/\-]", value.strip())
+        if len(parts) < 2:
+            continue
+        try:
+            a, b = int(parts[0]), int(parts[1])
+        except ValueError:
+            continue
+        if a > 12:
+            return "%d/%m/%Y"
+        if b > 12:
+            return "%m/%d/%Y"
+        pairs.append((a, b))
+
+    if len(pairs) < 2:
+        raise LoaderError("Cannot determine date order: too few dates")
+
+    first_var = sum(abs(pairs[i][0] - pairs[i + 1][0]) for i in range(len(pairs) - 1))
+    second_var = sum(abs(pairs[i][1] - pairs[i + 1][1]) for i in range(len(pairs) - 1))
+
+    if first_var < second_var:
+        return "%m/%d/%Y"
+    if second_var < first_var:
+        return "%d/%m/%Y"
+    raise LoaderError("Cannot determine date order: ambiguous date sequence")
+
+
 class HSBCLoader(BaseLoader):
     source_institution = "hsbc"
 
@@ -171,49 +215,42 @@ class HSBCLoader(BaseLoader):
 
     def parse_rows(self, file_path: Path) -> list[dict]:
         rows: list[dict] = []
-        date_formats = ["%d/%m/%Y", "%m/%d/%Y"]
-        if self.default_currency != "GBP":
-            date_formats = ["%m/%d/%Y", "%d/%m/%Y"]
 
         with open(file_path, newline="", encoding="utf-8-sig") as fh:
-            reader = csv.reader(fh)
-            for raw in reader:
-                if len(raw) < 3:
-                    continue
-                date_raw = raw[0].strip()
-                description = raw[1].strip()
-                amount_raw = raw[2].replace(",", "").strip()
-                if not (date_raw or description or amount_raw):
-                    continue
+            raw_rows = [r for r in csv.reader(fh) if len(r) >= 3]
 
-                posted_date = None
-                for fmt in date_formats:
-                    try:
-                        posted_date = datetime.strptime(date_raw, fmt).date()
-                        break
-                    except ValueError:
-                        continue
-                if posted_date is None:
-                    raise LoaderError(
-                        f"Cannot parse date '{date_raw}' in {file_path.name}"
-                    )
+        date_fmt = sniff_dmy_or_mdy([r[0].strip() for r in raw_rows if r[0].strip()])
 
-                try:
-                    amount = Decimal(amount_raw)
-                except InvalidOperation as exc:
-                    raise LoaderError(
-                        f"Cannot parse amount '{amount_raw}' in {file_path.name}: {exc}"
-                    ) from exc
+        for raw in raw_rows:
+            date_raw = raw[0].strip()
+            description = raw[1].strip()
+            amount_raw = raw[2].replace(",", "").strip()
+            if not (date_raw or description or amount_raw):
+                continue
 
-                rows.append(
-                    {
-                        "posted_date": posted_date,
-                        "description_raw": description,
-                        "amount": amount,
-                        "currency": self.default_currency,
-                        "direction": "credit" if amount > 0 else "debit",
-                    }
-                )
+            try:
+                posted_date = datetime.strptime(date_raw, date_fmt).date()
+            except ValueError as exc:
+                raise LoaderError(
+                    f"Cannot parse date '{date_raw}' in {file_path.name}: {exc}"
+                ) from exc
+
+            try:
+                amount = Decimal(amount_raw)
+            except InvalidOperation as exc:
+                raise LoaderError(
+                    f"Cannot parse amount '{amount_raw}' in {file_path.name}: {exc}"
+                ) from exc
+
+            rows.append(
+                {
+                    "posted_date": posted_date,
+                    "description_raw": description,
+                    "amount": amount,
+                    "currency": self.default_currency,
+                    "direction": "credit" if amount > 0 else "debit",
+                }
+            )
 
         return rows
 
@@ -236,37 +273,46 @@ class AmexLoader(BaseLoader):
         with open(file_path, newline="", encoding="utf-8-sig") as fh:
             reader = csv.DictReader(fh)
             self.validate_headers(reader.fieldnames or [])
+            raw_rows = list(reader)
 
-            for raw in reader:
-                date_raw = (raw.get("Date") or "").strip()
-                description = (raw.get("Description") or "").strip()
-                amount_raw = (raw.get("Amount") or "").replace(",", "").strip()
-                if not (date_raw or description or amount_raw):
-                    continue
+        date_fmt = sniff_dmy_or_mdy(
+            [
+                (r.get("Date") or "").strip()
+                for r in raw_rows
+                if (r.get("Date") or "").strip()
+            ]
+        )
 
-                try:
-                    posted_date = datetime.strptime(date_raw, "%d/%m/%Y").date()
-                except ValueError as exc:
-                    raise LoaderError(
-                        f"Cannot parse date '{date_raw}' in {file_path.name}: {exc}"
-                    ) from exc
+        for raw in raw_rows:
+            date_raw = (raw.get("Date") or "").strip()
+            description = (raw.get("Description") or "").strip()
+            amount_raw = (raw.get("Amount") or "").replace(",", "").strip()
+            if not (date_raw or description or amount_raw):
+                continue
 
-                try:
-                    amount = -Decimal(amount_raw)
-                except InvalidOperation as exc:
-                    raise LoaderError(
-                        f"Cannot parse amount '{amount_raw}' in {file_path.name}: {exc}"
-                    ) from exc
+            try:
+                posted_date = datetime.strptime(date_raw, date_fmt).date()
+            except ValueError as exc:
+                raise LoaderError(
+                    f"Cannot parse date '{date_raw}' in {file_path.name}: {exc}"
+                ) from exc
 
-                rows.append(
-                    {
-                        "posted_date": posted_date,
-                        "description_raw": description,
-                        "amount": amount,
-                        "currency": self.default_currency,
-                        "direction": "credit" if amount > 0 else "debit",
-                    }
-                )
+            try:
+                amount = -Decimal(amount_raw)
+            except InvalidOperation as exc:
+                raise LoaderError(
+                    f"Cannot parse amount '{amount_raw}' in {file_path.name}: {exc}"
+                ) from exc
+
+            rows.append(
+                {
+                    "posted_date": posted_date,
+                    "description_raw": description,
+                    "amount": amount,
+                    "currency": self.default_currency,
+                    "direction": "credit" if amount > 0 else "debit",
+                }
+            )
 
         return rows
 

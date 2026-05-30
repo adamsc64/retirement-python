@@ -12,7 +12,7 @@ class UploadCSVViewTests(TestCase):
     def _csv(
         self,
         name="statement.csv",
-        content=b"Date,Description,Amount\n01/01/2026,Coffee,10.00",
+        content=b"Date,Description,Amount\n13/01/2026,Coffee,10.00",
     ):
         return SimpleUploadedFile(name, content, content_type="text/csv")
 
