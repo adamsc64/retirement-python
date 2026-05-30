@@ -90,7 +90,9 @@ class CitiLoader(BaseLoader):
     def _is_checking(self, file_path: Path) -> bool:
         return file_path.stem.upper().startswith("CHK")
 
-    def _parse_date(self, value: str, fmt: str, file_path: Path) -> datetime.date:
+    def _parse_date(self, value: str, file_path: Path) -> datetime.date:
+        sep = "-" if "-" in value else "/"
+        fmt = f"%m{sep}%d{sep}%Y"
         try:
             return datetime.strptime(value, fmt).date()
         except ValueError as exc:
@@ -123,7 +125,6 @@ class CitiLoader(BaseLoader):
     def parse_rows(self, file_path: Path) -> list[dict]:
         """Return a list of normalised row dicts for *file_path*."""
         is_checking = self._is_checking(file_path)
-        date_fmt = "%m-%d-%Y" if is_checking else "%m/%d/%Y"
         rows: list[dict] = []
 
         with open(file_path, newline="", encoding="utf-8-sig") as fh:
@@ -151,7 +152,7 @@ class CitiLoader(BaseLoader):
                     # Row has neither debit nor credit; skip silently.
                     continue
 
-                posted_date = self._parse_date(raw["Date"].strip(), date_fmt, file_path)
+                posted_date = self._parse_date(raw["Date"].strip(), file_path)
 
                 rows.append(
                     {
