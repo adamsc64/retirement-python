@@ -14,10 +14,11 @@ class UploadCSVViewTests(TestCase):
 
     # --- auth ---
 
-    def test_get_redirects_unauthenticated(self):
+    def test_get_no_longer_redirects_unauthenticated(self):
+        # Now that we have AutoLoginMiddleware, everyone is authenticated.
         response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/login/", response["Location"])
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="csv_files"')
 
     # --- GET ---
 

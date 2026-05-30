@@ -17,6 +17,7 @@ Local-first Django pipeline for importing, excluding, and categorizing transacti
 - Duplicate imports are prevented by file hash; overlapping date-range rows are skipped with a warning.
 - Rule-based exclusions via `apply_exclusions`.
 - Rule-based categorization via `apply_categories`, with `Manual Review` fallback.
+- **Auto-login**: For development, all users are automatically logged in as a superuser (`admin/admin`).
 - Web UI at `/` for stats and `/categorize/` for keyboard-driven batch categorization.
 
 ## Setup
