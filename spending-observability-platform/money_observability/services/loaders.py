@@ -78,17 +78,15 @@ class CitiLoader(BaseLoader):
       Debit   : positive outgoing amount → amount = -Debit
       Credit  : positive incoming amount → amount = +Credit
 
-    Sub-format is detected from the filename: files whose stem starts with
-    "CHK" (case-insensitive) are treated as checking; all others as credit card.
+    Sub-format is detected from the data: checking credits are positive in
+    the file; credit-card credits are negative.  Both are normalised to a
+    positive amount (money in).
     """
 
     source_institution = "citi"
     EXPECTED_HEADERS = {"Status", "Date", "Description", "Debit", "Credit"}
 
     # ------------------------------------------------------------------ helpers
-
-    def _is_checking(self, file_path: Path) -> bool:
-        return file_path.stem.upper().startswith("CHK")
 
     def _parse_date(self, value: str, file_path: Path) -> datetime.date:
         sep = "-" if "-" in value else "/"
@@ -124,7 +122,6 @@ class CitiLoader(BaseLoader):
 
     def parse_rows(self, file_path: Path) -> list[dict]:
         """Return a list of normalised row dicts for *file_path*."""
-        is_checking = self._is_checking(file_path)
         rows: list[dict] = []
 
         with open(file_path, newline="", encoding="utf-8-sig") as fh:
@@ -140,13 +137,10 @@ class CitiLoader(BaseLoader):
                     direction = "debit"
                 elif credit_raw:
                     credit_val = self._parse_decimal(credit_raw, file_path)
-                    if is_checking:
-                        # Checking credits are positive in the file (money in)
-                        amount = credit_val
-                    else:
-                        # Credit-card credits are negative in the file (payments /
-                        # refunds); negate so money-in becomes positive.
-                        amount = -credit_val
+                    # Checking credits are positive; credit-card credits are
+                    # stored as negative (payments/refunds). In both cases
+                    # money-in should be positive, so take abs().
+                    amount = abs(credit_val)
                     direction = "credit"
                 else:
                     # Row has neither debit nor credit; skip silently.
