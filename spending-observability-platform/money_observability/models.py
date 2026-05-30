@@ -35,11 +35,11 @@ class BudgetTreatment(models.TextChoices):
 
 # Human-readable tooltips shown in the categorisation UI.
 BUDGET_TREATMENT_HINTS: dict[str, str] = {
-    BudgetTreatment.ORDINARY:  "Normal recurring monthly spend; included in baseline burn. E.g. morning coffee, groceries, transit, recurring subscriptions.",
-    BudgetTreatment.ANNUAL:    "Paid once a year; amortised ÷12 for planning burn. E.g. gym membership, car insurance, Amazon Prime.",
+    BudgetTreatment.ORDINARY: "Normal recurring monthly spend; included in baseline burn. E.g. morning coffee, groceries, transit, recurring subscriptions.",
+    BudgetTreatment.ANNUAL: "Paid once a year; amortised ÷12 for planning burn. E.g. gym membership, car insurance, Amazon Prime.",
     BudgetTreatment.IRREGULAR: "Expected but not on a fixed schedule; amortised in planning burn. E.g. car repairs, dental work, new glasses.",
-    BudgetTreatment.ONE_OFF:   "Non-recurring; excluded from both baseline and planning burn. E.g. buying a sofa, a one-time flight, emergency vet bill.",
-    BudgetTreatment.UNKNOWN:   "Not yet classified; excluded from baseline to avoid inflating the burn rate.",
+    BudgetTreatment.ONE_OFF: "Non-recurring; excluded from both baseline and planning burn. E.g. buying a sofa, a one-time flight, emergency vet bill.",
+    BudgetTreatment.UNKNOWN: "Not yet classified; excluded from baseline to avoid inflating the burn rate.",
 }
 
 
@@ -47,8 +47,12 @@ class Account(models.Model):
     institution = models.CharField(max_length=100)
     name = models.CharField(max_length=200)
     account_identifier = models.CharField(max_length=100)
-    account_type = models.CharField(max_length=50, choices=AccountType.choices, default=AccountType.OTHER)
-    currency = models.CharField(max_length=3, choices=Currency.choices, default=Currency.USD)
+    account_type = models.CharField(
+        max_length=50, choices=AccountType.choices, default=AccountType.OTHER
+    )
+    currency = models.CharField(
+        max_length=3, choices=Currency.choices, default=Currency.USD
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -102,12 +106,16 @@ class Transaction(models.Model):
     # the same fingerprint and that is correct. Used for cross-batch overlap
     # detection: if a fingerprint from a newly imported file already exists in a
     # prior batch, that row is skipped as a date-range overlap duplicate.
-    event_fingerprint = models.CharField(max_length=64, db_index=True, blank=True, default="")
+    event_fingerprint = models.CharField(
+        max_length=64, db_index=True, blank=True, default=""
+    )
 
     # source_native_id: the transaction ID supplied by the bank in the export
     # file, when one is available. Stored for reference and future use; not yet
     # used for deduplication because not all loaders/sources provide it.
-    source_native_id = models.CharField(max_length=200, db_index=True, blank=True, default="")
+    source_native_id = models.CharField(
+        max_length=200, db_index=True, blank=True, default=""
+    )
     import_batch = models.ForeignKey(
         ImportBatch,
         on_delete=models.CASCADE,
@@ -126,8 +134,12 @@ class Transaction(models.Model):
     description_clean = models.TextField(blank=True)
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     currency = models.CharField(max_length=3, choices=Currency.choices)
-    original_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
-    original_currency = models.CharField(max_length=3, choices=Currency.choices, blank=True)
+    original_amount = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
+    original_currency = models.CharField(
+        max_length=3, choices=Currency.choices, blank=True
+    )
     direction = models.CharField(max_length=10, choices=Direction.choices)
     excluded = models.BooleanField(default=False, db_index=True)
     exclusion_reason = models.CharField(max_length=100, blank=True, default="")

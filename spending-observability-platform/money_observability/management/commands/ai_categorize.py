@@ -40,9 +40,13 @@ class Command(BaseCommand):
         )
         if updated > 0:
             self.stdout.write(
-                self.style.SUCCESS(f"AI categorization complete. Updated {updated} transaction(s).")
+                self.style.SUCCESS(
+                    f"AI categorization complete. Updated {updated} transaction(s)."
+                )
             )
         else:
             self.stdout.write(
-                self.style.WARNING("No transactions were updated by AI. Ensure OPENAI_KEY is set and transactions are in Manual Review.")
+                self.style.WARNING(
+                    "No transactions were updated by AI. Ensure OPENAI_KEY is set and transactions are in Manual Review."
+                )
             )

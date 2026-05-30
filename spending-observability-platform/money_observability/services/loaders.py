@@ -56,6 +56,7 @@ class BaseLoader:
 # Citi
 # ---------------------------------------------------------------------------
 
+
 class CitiLoader(BaseLoader):
     """Loader for Citi credit-card and checking-account exports.
 
@@ -147,9 +148,7 @@ class CitiLoader(BaseLoader):
                     # Row has neither debit nor credit; skip silently.
                     continue
 
-                posted_date = self._parse_date(
-                    raw["Date"].strip(), date_fmt, file_path
-                )
+                posted_date = self._parse_date(raw["Date"].strip(), date_fmt, file_path)
 
                 rows.append(
                     {
@@ -304,14 +303,20 @@ class WiseLoader(BaseLoader):
 
             for raw in reader:
                 created_on = (raw.get("Created on") or "").strip()
-                amount_raw = (raw.get("Source amount (after fees)") or "").replace(",", "").strip()
+                amount_raw = (
+                    (raw.get("Source amount (after fees)") or "")
+                    .replace(",", "")
+                    .strip()
+                )
                 direction_raw = (raw.get("Direction") or "").strip().upper()
 
                 if not (created_on and amount_raw and direction_raw):
                     continue
 
                 try:
-                    posted_date = datetime.strptime(created_on, "%Y-%m-%d %H:%M:%S").date()
+                    posted_date = datetime.strptime(
+                        created_on, "%Y-%m-%d %H:%M:%S"
+                    ).date()
                 except ValueError as exc:
                     raise LoaderError(
                         f"Cannot parse Created on '{created_on}' in {file_path.name}: {exc}"
@@ -327,17 +332,23 @@ class WiseLoader(BaseLoader):
                 if direction_raw == "OUT":
                     amount = -abs(amount_value)
                     direction = "debit"
-                    counterparty = (raw.get("Target name") or "").strip() or (raw.get("Source name") or "").strip()
+                    counterparty = (raw.get("Target name") or "").strip() or (
+                        raw.get("Source name") or ""
+                    ).strip()
                 elif direction_raw == "IN":
                     amount = abs(amount_value)
                     direction = "credit"
-                    counterparty = (raw.get("Source name") or "").strip() or (raw.get("Target name") or "").strip()
+                    counterparty = (raw.get("Source name") or "").strip() or (
+                        raw.get("Target name") or ""
+                    ).strip()
                 else:
                     raise LoaderError(
                         f"Unknown Direction '{direction_raw}' in {file_path.name}"
                     )
 
-                currency = (raw.get("Source currency") or "").strip().upper() or self.default_currency
+                currency = (
+                    raw.get("Source currency") or ""
+                ).strip().upper() or self.default_currency
                 description = (
                     (raw.get("Reference") or "").strip()
                     or counterparty
@@ -391,33 +402,27 @@ LOADER_REGISTRY: dict[str, type[BaseLoader]] = {
 
 UNIVERSAL_COLUMN_MAP: dict[str, str | None] = {
     # posted_date
-    "Date": "posted_date",            # citi (MM/DD/YYYY | MM-DD-YYYY), amex (DD/MM/YYYY)
-    "Created on": "posted_date",      # wise (YYYY-MM-DD HH:MM:SS)
-
+    "Date": "posted_date",  # citi (MM/DD/YYYY | MM-DD-YYYY), amex (DD/MM/YYYY)
+    "Created on": "posted_date",  # wise (YYYY-MM-DD HH:MM:SS)
     # description_raw
-    "Description": "description_raw", # citi, amex
-    "Reference": "description_raw",   # wise — primary description
-    "Target name": "description_raw", # wise — counterparty on OUT
-    "Source name": "description_raw", # wise — counterparty on IN
-
+    "Description": "description_raw",  # citi, amex
+    "Reference": "description_raw",  # wise — primary description
+    "Target name": "description_raw",  # wise — counterparty on OUT
+    "Source name": "description_raw",  # wise — counterparty on IN
     # amount  (sign conventions vary; loader must handle)
-    "Amount": "amount",                        # amex: positive = spend, negated
-    "Debit": "amount",                         # citi: positive = spend, negated
-    "Credit": "amount",                        # citi: sign logic differs by sub-format
-    "Source amount (after fees)": "amount",    # wise: sign set by Direction column
-
+    "Amount": "amount",  # amex: positive = spend, negated
+    "Debit": "amount",  # citi: positive = spend, negated
+    "Credit": "amount",  # citi: sign logic differs by sub-format
+    "Source amount (after fees)": "amount",  # wise: sign set by Direction column
     # currency
-    "Source currency": "currency",    # wise; all other loaders use a default
-
+    "Source currency": "currency",  # wise; all other loaders use a default
     # direction
-    "Direction": "direction",         # wise: "OUT" → debit, "IN" → credit
-
+    "Direction": "direction",  # wise: "OUT" → debit, "IN" → credit
     # source_native_id
-    "ID": "source_native_id",         # wise; also used as last-resort description
-
+    "ID": "source_native_id",  # wise; also used as last-resort description
     # consumed by loader logic but not stored as a standalone field
-    "Status": None,                   # citi, wise — ignored
-    "Category": None,                 # wise — appended to description_raw
+    "Status": None,  # citi, wise — ignored
+    "Category": None,  # wise — appended to description_raw
 }
 
 # ---------------------------------------------------------------------------
@@ -432,9 +437,10 @@ UNIVERSAL_COLUMN_MAP: dict[str, str | None] = {
 # HSBC exports have no header row.  We detect them by inspecting the first
 # non-empty data row and then prepend a synthetic header so the rest of the
 # pipeline can treat the file uniformly.
-_HSBC_DATE_RE = re.compile(r'^\d{2}/\d{2}/\d{4}$')
-_HSBC_AMOUNT_RE = re.compile(r'^-?[\d,]+\.\d{2}$')
+_HSBC_DATE_RE = re.compile(r"^\d{2}/\d{2}/\d{4}$")
+_HSBC_AMOUNT_RE = re.compile(r"^-?[\d,]+\.\d{2}$")
 _HSBC_SYNTHETIC_HEADER = "Date,Description,Amount"
+
 
 @dataclass
 class ColumnMapping:
@@ -444,6 +450,7 @@ class ColumnMapping:
     Required fields (posted_date, amount, description_raw) are always
     non-empty; optional fields default to an empty list.
     """
+
     posted_date: list[str] = field(default_factory=list)
     amount: list[str] = field(default_factory=list)
     description_raw: list[str] = field(default_factory=list)
@@ -455,6 +462,7 @@ class ColumnMapping:
 @dataclass
 class SniffResult:
     """Result of GenericLoader.sniff()."""
+
     mapping: ColumnMapping
     # Number of data rows in the file (header excluded).
     row_count: int
@@ -558,6 +566,11 @@ class GenericLoader:
         headers = list(reader.fieldnames or [])
         mapping = self.detect_mapping(headers)
         row_count = sum(1 for _ in reader)
-        institution = forced_institution if forced_institution is not None else self.detect_institution(headers)
-        return SniffResult(mapping=mapping, row_count=row_count, institution=institution)
-
+        institution = (
+            forced_institution
+            if forced_institution is not None
+            else self.detect_institution(headers)
+        )
+        return SniffResult(
+            mapping=mapping, row_count=row_count, institution=institution
+        )

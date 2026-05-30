@@ -11,19 +11,14 @@ def print_state(*args, **kwargs):
 
 def format_state(year, month, monthly, gain, total):
     inflation_total = total * math.pow(1.0 - (3.22 / 100.0), year)
-    return ("Year {}, "
-            "Month {}, "
-            "Adding: ${:,.2f}, "
-            "Gain: ${:,.2f}, "
-            "Total: ${:,.2f} "
-            "(Inflation-Adusted: ${:,.2f})"
-            ).format(
-                year + 1,
-                month + 1,
-                monthly,
-                gain,
-                total,
-                inflation_total)
+    return (
+        "Year {}, "
+        "Month {}, "
+        "Adding: ${:,.2f}, "
+        "Gain: ${:,.2f}, "
+        "Total: ${:,.2f} "
+        "(Inflation-Adusted: ${:,.2f})"
+    ).format(year + 1, month + 1, monthly, gain, total, inflation_total)
 
 
 def main():
@@ -39,28 +34,31 @@ def main():
         for month in range(12):
             gain = fund.do_month(contribution=monthly)
             print_state(year, month, monthly, gain, fund.total)
-        salary *= (1 + (args.annual_raise / 100.0))
+        salary *= 1 + (args.annual_raise / 100.0)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Calculate projected investment total each month.')
+        description="Calculate projected investment total each month."
+    )
+    parser.add_argument("--salary", type=int, required=True, help="Annual salary.")
     parser.add_argument(
-        '--salary', type=int, required=True,
-        help='Annual salary.')
+        "--annual-raise",
+        type=float,
+        default=3.0,
+        help="Rate of annual raise, in percent.",
+    )
     parser.add_argument(
-        '--annual-raise', type=float, default=3.0,
-        help='Rate of annual raise, in percent.')
+        "--contribution",
+        type=int,
+        required=True,
+        help="Contribution of salary per month, in percent.",
+    )
     parser.add_argument(
-        '--contribution', type=int, required=True,
-        help='Contribution of salary per month, in percent.')
+        "--num-years", type=int, required=True, help="Number of years to save."
+    )
     parser.add_argument(
-        '--num-years', type=int, required=True,
-        help='Number of years to save.')
-    parser.add_argument(
-        '--growth', type=float, default=5.5,
-        help='Growth rate, in percentage.')
-    parser.add_argument(
-        '--start-with', type=int, default=0,
-        help='Starting amount.')
+        "--growth", type=float, default=5.5, help="Growth rate, in percentage."
+    )
+    parser.add_argument("--start-with", type=int, default=0, help="Starting amount.")
     main()

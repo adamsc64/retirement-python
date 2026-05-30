@@ -37,13 +37,19 @@ def load_exclusion_rules(path: Path) -> list[ExclusionRule]:
                 rule_id=rule_id,
                 reason=reason,
                 description_contains=tuple(
-                    s.lower() for s in (match.get("description_contains") or []) if str(s).strip()
+                    s.lower()
+                    for s in (match.get("description_contains") or [])
+                    if str(s).strip()
                 ),
                 source_institution_in=tuple(
-                    s.lower() for s in (match.get("source_institution_in") or []) if str(s).strip()
+                    s.lower()
+                    for s in (match.get("source_institution_in") or [])
+                    if str(s).strip()
                 ),
                 direction_in=tuple(
-                    s.lower() for s in (match.get("direction_in") or []) if str(s).strip()
+                    s.lower()
+                    for s in (match.get("direction_in") or [])
+                    if str(s).strip()
                 ),
                 amount_is_zero=bool(match.get("amount_is_zero", False)),
             )
@@ -56,7 +62,9 @@ def match_exclusion_rule(tx: Transaction, rule: ExclusionRule) -> bool:
     source = (tx.source_institution or "").lower()
     direction = (tx.direction or "").lower()
 
-    if rule.description_contains and not any(token in desc for token in rule.description_contains):
+    if rule.description_contains and not any(
+        token in desc for token in rule.description_contains
+    ):
         return False
     if rule.source_institution_in and source not in rule.source_institution_in:
         return False
@@ -85,11 +93,23 @@ def make_exclusions(queryset, rules_path: Path | None = None) -> int:
         if matched_rule is None:
             desired = (False, "", "", None)
         else:
-            desired = (True, matched_rule.reason, matched_rule.rule_id, tx.excluded_at or now)
+            desired = (
+                True,
+                matched_rule.reason,
+                matched_rule.rule_id,
+                tx.excluded_at or now,
+            )
 
-        current = (tx.excluded, tx.exclusion_reason, tx.exclusion_rule_id, tx.excluded_at)
+        current = (
+            tx.excluded,
+            tx.exclusion_reason,
+            tx.exclusion_rule_id,
+            tx.excluded_at,
+        )
         if current != desired:
-            tx.excluded, tx.exclusion_reason, tx.exclusion_rule_id, tx.excluded_at = desired
+            tx.excluded, tx.exclusion_reason, tx.exclusion_rule_id, tx.excluded_at = (
+                desired
+            )
             to_update.append(tx)
 
     if to_update:

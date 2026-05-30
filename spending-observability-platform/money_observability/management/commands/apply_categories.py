@@ -27,7 +27,9 @@ class Command(BaseCommand):
                 Transaction.objects.filter(excluded=False), rules_path
             )
             self.stdout.write(
-                self.style.SUCCESS(f"Applied categories. Updated {changed} transaction(s).")
+                self.style.SUCCESS(
+                    f"Applied categories. Updated {changed} transaction(s)."
+                )
             )
         except ValueError as exc:
             raise CommandError(str(exc)) from exc

@@ -27,7 +27,8 @@ class WiseLoaderTests(TestCase):
         incoming = next(
             row
             for row in rows
-            if row["description_raw"] == "Uber Eats | Eating out" and row["direction"] == "credit"
+            if row["description_raw"] == "Uber Eats | Eating out"
+            and row["direction"] == "credit"
         )
         self.assertEqual(incoming["amount"], Decimal("4.59"))
         self.assertEqual(incoming["currency"], "GBP")

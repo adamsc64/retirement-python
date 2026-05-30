@@ -71,15 +71,16 @@ class Command(BaseCommand):
         order_field = "total" if sort_by == "spend" else "-count"
 
         groups = (
-            queryset
-            .values("description_clean", "currency")
+            queryset.values("description_clean", "currency")
             .annotate(total=Sum("amount"), count=Count("id"))
             .order_by(order_field)[:limit]
         )
 
         groups = list(groups)
         if not groups:
-            self.stdout.write(self.style.WARNING("No uncategorized debit transactions found."))
+            self.stdout.write(
+                self.style.WARNING("No uncategorized debit transactions found.")
+            )
             return
 
         sort_label = "total spend" if sort_by == "spend" else "transaction count"

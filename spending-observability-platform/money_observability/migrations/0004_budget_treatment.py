@@ -6,13 +6,27 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('money_observability', '0003_transaction_categorized_at_transaction_category_and_more'),
+        (
+            "money_observability",
+            "0003_transaction_categorized_at_transaction_category_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='transaction',
-            name='budget_treatment',
-            field=models.CharField(choices=[('ordinary', 'Ordinary monthly'), ('annual', 'Annual / amortised'), ('irregular', 'Irregular expected'), ('one_off', 'One-off'), ('unknown', 'Unknown')], db_index=True, default='unknown', max_length=20),
+            model_name="transaction",
+            name="budget_treatment",
+            field=models.CharField(
+                choices=[
+                    ("ordinary", "Ordinary monthly"),
+                    ("annual", "Annual / amortised"),
+                    ("irregular", "Irregular expected"),
+                    ("one_off", "One-off"),
+                    ("unknown", "Unknown"),
+                ],
+                db_index=True,
+                default="unknown",
+                max_length=20,
+            ),
         ),
     ]

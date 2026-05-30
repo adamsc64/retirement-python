@@ -3,22 +3,23 @@ from collections import namedtuple
 STOCK_YIELD = 5.5 / 100.0
 BOND_YIELD = 2.0 / 100.0
 
-YearAllocation = namedtuple('YearAllocation', ['years', 'stocks', 'bonds'])
+YearAllocation = namedtuple("YearAllocation", ["years", "stocks", "bonds"])
 
 
 class TargetFund(object):
-    ALLOCATION = [YearAllocation(years=50, stocks=90.1, bonds=9.9),
-                  YearAllocation(years=45, stocks=90.1, bonds=9.9),
-                  YearAllocation(years=40, stocks=90.1, bonds=9.9),
-                  YearAllocation(years=35, stocks=90.1, bonds=9.9),
-                  YearAllocation(years=30, stocks=90.1, bonds=9.9),
-                  YearAllocation(years=25, stocks=86.0, bonds=14.0),
-                  YearAllocation(years=20, stocks=78.5, bonds=21.5),
-                  YearAllocation(years=15, stocks=71.0, bonds=29.0),
-                  YearAllocation(years=10, stocks=63.6, bonds=36.4),
-                  YearAllocation(years=5, stocks=55.1, bonds=44.9),
-                  YearAllocation(years=0, stocks=42.1, bonds=56.9),
-                  ]
+    ALLOCATION = [
+        YearAllocation(years=50, stocks=90.1, bonds=9.9),
+        YearAllocation(years=45, stocks=90.1, bonds=9.9),
+        YearAllocation(years=40, stocks=90.1, bonds=9.9),
+        YearAllocation(years=35, stocks=90.1, bonds=9.9),
+        YearAllocation(years=30, stocks=90.1, bonds=9.9),
+        YearAllocation(years=25, stocks=86.0, bonds=14.0),
+        YearAllocation(years=20, stocks=78.5, bonds=21.5),
+        YearAllocation(years=15, stocks=71.0, bonds=29.0),
+        YearAllocation(years=10, stocks=63.6, bonds=36.4),
+        YearAllocation(years=5, stocks=55.1, bonds=44.9),
+        YearAllocation(years=0, stocks=42.1, bonds=56.9),
+    ]
 
     def __init__(self, target_year, start_with=0):
         self.target_year = target_year
@@ -44,6 +45,6 @@ class TargetFund(object):
         adding = float(contribution)
         self.total += adding
         gain = self.total * self.yields_per_month
-        gain = (int(gain * 100.0) / 100.0)
+        gain = int(gain * 100.0) / 100.0
         self.total += gain
         return gain

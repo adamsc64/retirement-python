@@ -36,7 +36,12 @@ class UkLoaderCurrencyTests(TestCase):
     def test_amex_loader_uses_configured_default_currency(self):
         loader = AmexLoader(default_currency="GBP")
         rows = loader.parse_rows(
-            self.base_dir / "data" / "raw" / "amex" / "gbp" / "uk-amex-2026-04-07_to-05-07.csv"
+            self.base_dir
+            / "data"
+            / "raw"
+            / "amex"
+            / "gbp"
+            / "uk-amex-2026-04-07_to-05-07.csv"
         )
 
         self.assertEqual(len(rows), 7)

@@ -9,7 +9,11 @@ class UploadCSVViewTests(TestCase):
         self.user = User.objects.create_user(username="testuser", password="testpass")
         self.url = reverse("upload_csv")
 
-    def _csv(self, name="statement.csv", content=b"Date,Description,Amount\n01/01/2026,Coffee,10.00"):
+    def _csv(
+        self,
+        name="statement.csv",
+        content=b"Date,Description,Amount\n01/01/2026,Coffee,10.00",
+    ):
         return SimpleUploadedFile(name, content, content_type="text/csv")
 
     # --- auth ---
@@ -40,8 +44,12 @@ class UploadCSVViewTests(TestCase):
 
     def test_post_valid_csv_reports_row_count(self):
         self.client.force_login(self.user)
-        content = b"Date,Description,Amount\n01/01/2026,Coffee,10.00\n02/01/2026,Tea,5.00\n"
-        response = self.client.post(self.url, {"csv_files": self._csv(content=content)}, follow=True)
+        content = (
+            b"Date,Description,Amount\n01/01/2026,Coffee,10.00\n02/01/2026,Tea,5.00\n"
+        )
+        response = self.client.post(
+            self.url, {"csv_files": self._csv(content=content)}, follow=True
+        )
         messages = [str(m) for m in response.context["messages"]]
         self.assertTrue(any("2 transaction" in m for m in messages))
 
@@ -62,7 +70,9 @@ class UploadCSVViewTests(TestCase):
 
     def test_post_non_csv_file_shows_error(self):
         self.client.force_login(self.user)
-        bad_file = SimpleUploadedFile("report.xlsx", b"data", content_type="application/octet-stream")
+        bad_file = SimpleUploadedFile(
+            "report.xlsx", b"data", content_type="application/octet-stream"
+        )
         response = self.client.post(self.url, {"csv_files": bad_file}, follow=True)
         messages = [str(m) for m in response.context["messages"]]
         self.assertTrue(any("report.xlsx" in m for m in messages))
@@ -70,7 +80,10 @@ class UploadCSVViewTests(TestCase):
 
     def test_post_mixed_files_accepts_csv_and_rejects_other(self):
         self.client.force_login(self.user)
-        files = [self._csv("good.csv"), SimpleUploadedFile("bad.txt", b"x", content_type="text/plain")]
+        files = [
+            self._csv("good.csv"),
+            SimpleUploadedFile("bad.txt", b"x", content_type="text/plain"),
+        ]
         response = self.client.post(self.url, {"csv_files": files}, follow=True)
         messages = [str(m) for m in response.context["messages"]]
         self.assertTrue(any("good.csv" in m for m in messages))

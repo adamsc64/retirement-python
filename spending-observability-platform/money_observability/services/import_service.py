@@ -54,7 +54,9 @@ def infer_source_metadata_from_path(path: Path) -> SourceMetadata:
     and <currency> is one of: usd, gbp, eur (case-insensitive).
     """
     parts = [p.lower() for p in path.parts]
-    source_index = next((i for i, part in enumerate(parts) if part in SUPPORTED_SOURCES), None)
+    source_index = next(
+        (i for i, part in enumerate(parts) if part in SUPPORTED_SOURCES), None
+    )
     if source_index is None:
         raise ValueError(
             f"Cannot infer source from path '{path}'. "
@@ -81,11 +83,13 @@ def infer_source_metadata_from_path(path: Path) -> SourceMetadata:
 # Web-upload import
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ImportSummary:
     """Result of import_uploaded_bytes()."""
+
     institution: str
-    imported: int   # new Transaction rows written
+    imported: int  # new Transaction rows written
     duplicate: int  # rows skipped (source_row_key already exists)
 
 

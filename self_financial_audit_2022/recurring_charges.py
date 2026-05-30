@@ -27,13 +27,17 @@ def load(tsv_files):
             last4 = get_account_last4(tsv_file)
             if last4 is None:
                 raise Exception(f"no last4 - not valid {tsv_file}")
-            Transaction = namedtuple("Transaction", (get_columns(next(infile)) + ["account"]))
+            Transaction = namedtuple(
+                "Transaction", (get_columns(next(infile)) + ["account"])
+            )
             while True:
                 try:
                     raw_row = next(infile)
                     transaction = Transaction(*(get_columns(raw_row) + [last4]))
                 except TypeError:
-                    import ipdb; ipdb.set_trace()  # noqa
+                    import ipdb
+
+                    ipdb.set_trace()  # noqa
                     pass
                 except StopIteration:
                     break
@@ -85,10 +89,8 @@ def exclude_non_current(repeating):
             if most_recent is None or date > most_recent:
                 most_recent = date
     for key, transactions in repeating.items():
-        dates = [dateutil.parser.parse(t.Date).date()
-                 for t in transactions]
-        if not any([d > most_recent - datetime.timedelta(days=60)
-                    for d in dates]):
+        dates = [dateutil.parser.parse(t.Date).date() for t in transactions]
+        if not any([d > most_recent - datetime.timedelta(days=60) for d in dates]):
             non_current.append(key)
     for key in non_current:
         del repeating[key]
@@ -108,9 +110,12 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('tsv_files', type=str, nargs='+',
-                        help='Citibank tab-separated files to process',
-                        )
-    parser.add_argument('--dates')
+    parser.add_argument(
+        "tsv_files",
+        type=str,
+        nargs="+",
+        help="Citibank tab-separated files to process",
+    )
+    parser.add_argument("--dates")
     args = parser.parse_args()
     main(args)

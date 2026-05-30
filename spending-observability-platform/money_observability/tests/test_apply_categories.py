@@ -36,7 +36,9 @@ categories:
 """.strip()
         )
         try:
-            call_command("apply_categories", "--rules", str(rules_path), stdout=StringIO())
+            call_command(
+                "apply_categories", "--rules", str(rules_path), stdout=StringIO()
+            )
         finally:
             rules_path.unlink(missing_ok=True)
 
@@ -59,7 +61,9 @@ categories:
 """.strip()
         )
         try:
-            call_command("apply_categories", "--rules", str(rules_path), stdout=StringIO())
+            call_command(
+                "apply_categories", "--rules", str(rules_path), stdout=StringIO()
+            )
         finally:
             rules_path.unlink(missing_ok=True)
 

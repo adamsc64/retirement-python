@@ -5,7 +5,13 @@ from .models import Account, ImportBatch, Transaction
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display = ["institution", "name", "account_identifier", "account_type", "currency"]
+    list_display = [
+        "institution",
+        "name",
+        "account_identifier",
+        "account_type",
+        "currency",
+    ]
     list_filter = ["institution", "account_type", "currency"]
     search_fields = ["institution", "name", "account_identifier"]
 

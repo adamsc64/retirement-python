@@ -71,7 +71,9 @@ class Command(BaseCommand):
                 unique_files.append(f)
 
         if not unique_files:
-            self.stdout.write(self.style.WARNING(f"No CSV files found under {data_dir}"))
+            self.stdout.write(
+                self.style.WARNING(f"No CSV files found under {data_dir}")
+            )
             return
 
         mode = "APPLY" if apply else "DRY-RUN"
@@ -145,7 +147,9 @@ class Command(BaseCommand):
                                 account_identifier=account.account_identifier,
                                 row=row,
                             ),
-                            source_native_id=str(row.get("source_native_id", "")).strip(),
+                            source_native_id=str(
+                                row.get("source_native_id", "")
+                            ).strip(),
                             import_batch=batch,
                             account=account,
                             source_file=str(csv_path),
@@ -169,18 +173,21 @@ class Command(BaseCommand):
                     # across batches a matching fingerprint means a duplicate.
                     new_fingerprints = [tx.event_fingerprint for tx in transactions]
                     existing_fingerprints = set(
-                        Transaction.objects
-                        .filter(event_fingerprint__in=new_fingerprints)
+                        Transaction.objects.filter(
+                            event_fingerprint__in=new_fingerprints
+                        )
                         .exclude(import_batch=batch)
                         .values_list("event_fingerprint", flat=True)
                     )
                     if existing_fingerprints:
                         overlap_count = sum(
-                            1 for tx in transactions
+                            1
+                            for tx in transactions
                             if tx.event_fingerprint in existing_fingerprints
                         )
                         transactions = [
-                            tx for tx in transactions
+                            tx
+                            for tx in transactions
                             if tx.event_fingerprint not in existing_fingerprints
                         ]
                         self.stdout.write(
@@ -209,10 +216,14 @@ class Command(BaseCommand):
                 )
             except ValueError as exc:
                 skipped_count += 1
-                self.stdout.write(self.style.WARNING(f"  [SKIP  ]  {csv_path}  ({exc})"))
+                self.stdout.write(
+                    self.style.WARNING(f"  [SKIP  ]  {csv_path}  ({exc})")
+                )
 
         self.stdout.write("")
-        self.stdout.write(f"Summary: imported files={imported_count}, skipped files={skipped_count}")
+        self.stdout.write(
+            f"Summary: imported files={imported_count}, skipped files={skipped_count}"
+        )
         if not apply:
             self.stdout.write(
                 self.style.NOTICE("Dry run complete. Use --apply to persist imports.")

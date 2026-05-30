@@ -4,6 +4,7 @@ Provides run_ai_categorize() for use by both the management command and the
 web-upload pipeline.  Requires the OPENAI_KEY environment variable; returns 0
 silently when it is absent or when the openai package is not installed.
 """
+
 from __future__ import annotations
 
 import json

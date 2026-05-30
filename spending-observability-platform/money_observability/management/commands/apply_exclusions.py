@@ -42,7 +42,9 @@ class Command(BaseCommand):
         try:
             changed = make_exclusions(queryset, rules_path)
             self.stdout.write(
-                self.style.SUCCESS(f"Applied exclusions. Updated {changed} transaction(s).")
+                self.style.SUCCESS(
+                    f"Applied exclusions. Updated {changed} transaction(s)."
+                )
             )
         except ValueError as exc:
             raise CommandError(str(exc)) from exc

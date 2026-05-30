@@ -9,6 +9,7 @@ Each Category carries:
               (j / k / a are reserved for navigation / select-all)
   ai_hint   : plain-English description fed to the LLM prompt
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -22,23 +23,33 @@ CATEGORY_MANUAL_REVIEW = "Manual Review"
 @dataclass(frozen=True)
 class Category:
     name: str
-    shortcut: str   # single lowercase letter
-    ai_hint: str    # description for LLM classification prompts
+    shortcut: str  # single lowercase letter
+    ai_hint: str  # description for LLM classification prompts
 
 
 # Ordered by expected frequency of use (also controls UI button order).
 # Keyboard conflict notes: P=sho(P)ping, C=health(C)are, V=tra(V)el, I=g(I)ving.
 CATEGORIES: list[Category] = [
-    Category("Food & Drink",           "f", "restaurants, cafes, takeaways, food delivery, supermarkets, food shops"),
-    Category("Transport",              "t", "public transit, taxis, rideshares, fuel, parking, buses"),
-    Category("Housing",                "h", "rent, utilities, home services, repairs, laundry and dry-cleaning"),
-    Category("Subscriptions",          "s", "recurring software, streaming, club memberships"),
-    Category("Shopping",               "p", "retail, clothing, online shopping, general merchandise"),
-    Category("Entertainment",          "e", "cinema, events, games, hobbies, sport venues"),
-    Category("Healthcare",             "c", "medical, pharmacy, dental, optician"),
-    Category("Travel",                 "v", "flights, hotels, travel agencies, foreign-trip expenses"),
-    Category("Giving",                 "i", "charitable donations"),
-    Category("Other",                  "o", "anything that doesn't fit the above"),
+    Category(
+        "Food & Drink",
+        "f",
+        "restaurants, cafes, takeaways, food delivery, supermarkets, food shops",
+    ),
+    Category(
+        "Transport", "t", "public transit, taxis, rideshares, fuel, parking, buses"
+    ),
+    Category(
+        "Housing",
+        "h",
+        "rent, utilities, home services, repairs, laundry and dry-cleaning",
+    ),
+    Category("Subscriptions", "s", "recurring software, streaming, club memberships"),
+    Category("Shopping", "p", "retail, clothing, online shopping, general merchandise"),
+    Category("Entertainment", "e", "cinema, events, games, hobbies, sport venues"),
+    Category("Healthcare", "c", "medical, pharmacy, dental, optician"),
+    Category("Travel", "v", "flights, hotels, travel agencies, foreign-trip expenses"),
+    Category("Giving", "i", "charitable donations"),
+    Category("Other", "o", "anything that doesn't fit the above"),
 ]
 
 # Derived helpers — computed once so callers don't repeat the comprehensions.

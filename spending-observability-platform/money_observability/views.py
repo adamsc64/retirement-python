@@ -71,8 +71,7 @@ def categorize_queue(request):
         qs = qs.filter(category=view_category)
 
     raw = list(
-        qs.order_by("posted_date", "description_clean")
-        .values(
+        qs.order_by("posted_date", "description_clean").values(
             "id",
             "posted_date",
             "description_clean",
@@ -93,7 +92,9 @@ def categorize_queue(request):
         "money_observability/categorize.html",
         {
             "transactions": raw,
-            "categories_with_keys": [(c.name, c.shortcut.upper(), c.ai_hint) for c in CATEGORIES],
+            "categories_with_keys": [
+                (c.name, c.shortcut.upper(), c.ai_hint) for c in CATEGORIES
+            ],
             "key_to_category_json": json.dumps(KEY_TO_CATEGORY),
             "total_count": len(raw),
             "view_category": view_category,
@@ -190,12 +191,16 @@ def monthly_summary(request):
 
     # Accumulate per (category, currency).
     # Shape: {category: {currency: {"cash": D, "baseline": D, "planning": D, "count": int}}}
-    raw_data: dict = defaultdict(lambda: defaultdict(lambda: {
-        "cash": Decimal(0),
-        "baseline": Decimal(0),
-        "planning": Decimal(0),
-        "count": 0,
-    }))
+    raw_data: dict = defaultdict(
+        lambda: defaultdict(
+            lambda: {
+                "cash": Decimal(0),
+                "baseline": Decimal(0),
+                "planning": Decimal(0),
+                "count": 0,
+            }
+        )
+    )
 
     for tx in qs:
         cat = tx["category"] or CATEGORY_MANUAL_REVIEW
@@ -224,21 +229,28 @@ def monthly_summary(request):
 
     # Build rows for template.
     rows = []
-    totals: dict[str, dict] = defaultdict(lambda: {
-        "cash": Decimal(0), "baseline": Decimal(0), "planning": Decimal(0), "count": 0
-    })
+    totals: dict[str, dict] = defaultdict(
+        lambda: {
+            "cash": Decimal(0),
+            "baseline": Decimal(0),
+            "planning": Decimal(0),
+            "count": 0,
+        }
+    )
 
     for cat in ordered_cats:
         currency_entries = []
         for cur in sorted(raw_data[cat]):
             cell = raw_data[cat][cur]
-            currency_entries.append({
-                "currency": cur,
-                "cash": cell["cash"].quantize(Decimal("0.01")),
-                "baseline": cell["baseline"].quantize(Decimal("0.01")),
-                "planning": cell["planning"].quantize(Decimal("0.01")),
-                "count": cell["count"],
-            })
+            currency_entries.append(
+                {
+                    "currency": cur,
+                    "cash": cell["cash"].quantize(Decimal("0.01")),
+                    "baseline": cell["baseline"].quantize(Decimal("0.01")),
+                    "planning": cell["planning"].quantize(Decimal("0.01")),
+                    "count": cell["count"],
+                }
+            )
             totals[cur]["cash"] += cell["cash"]
             totals[cur]["baseline"] += cell["baseline"]
             totals[cur]["planning"] += cell["planning"]
@@ -265,13 +277,17 @@ def monthly_summary(request):
         budget_treatment=BudgetTreatment.UNKNOWN,
     ).count()
 
-    return render(request, "money_observability/monthly_summary.html", {
-        "start": start,
-        "end": end,
-        "rows": rows,
-        "total_rows": total_rows,
-        "unknown_budget_count": unknown_budget_count,
-    })
+    return render(
+        request,
+        "money_observability/monthly_summary.html",
+        {
+            "start": start,
+            "end": end,
+            "rows": rows,
+            "total_rows": total_rows,
+            "unknown_budget_count": unknown_budget_count,
+        },
+    )
 
 
 @login_required(login_url="/admin/login/")
@@ -309,9 +325,10 @@ def upload_csv(request):
         for msg in errors:
             messages.error(request, msg)
         if accepted:
-            messages.success(request, f"Processed {len(accepted)} file(s): {', '.join(accepted)}")
+            messages.success(
+                request, f"Processed {len(accepted)} file(s): {', '.join(accepted)}"
+            )
 
         return redirect("upload_csv")
 
     return render(request, "money_observability/upload.html")
-

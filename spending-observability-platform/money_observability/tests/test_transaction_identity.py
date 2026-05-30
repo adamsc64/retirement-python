@@ -32,4 +32,6 @@ class TransactionIdentityTests(TestCase):
 
         self.assertEqual(duplicates.count(), 2)
         self.assertNotEqual(duplicates[0].source_row_key, duplicates[1].source_row_key)
-        self.assertEqual(duplicates[0].event_fingerprint, duplicates[1].event_fingerprint)
+        self.assertEqual(
+            duplicates[0].event_fingerprint, duplicates[1].event_fingerprint
+        )

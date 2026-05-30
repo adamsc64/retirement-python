@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('money_observability', '0001_initial'),
+        ("money_observability", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='transaction',
-            name='excluded',
+            model_name="transaction",
+            name="excluded",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='transaction',
-            name='excluded_at',
+            model_name="transaction",
+            name="excluded_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='transaction',
-            name='exclusion_reason',
-            field=models.CharField(blank=True, default='', max_length=100),
+            model_name="transaction",
+            name="exclusion_reason",
+            field=models.CharField(blank=True, default="", max_length=100),
         ),
         migrations.AddField(
-            model_name='transaction',
-            name='exclusion_rule_id',
-            field=models.CharField(blank=True, default='', max_length=100),
+            model_name="transaction",
+            name="exclusion_rule_id",
+            field=models.CharField(blank=True, default="", max_length=100),
         ),
     ]
