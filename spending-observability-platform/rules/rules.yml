@@ -115,6 +115,7 @@ categories:
         - caffè nero
         - old bookbinders
         - just in time c
+        - "| Eating out"
 
 
   - id: transport
@@ -141,6 +142,10 @@ categories:
         - bp garage
         - fuel
         - stagecoach
+        - "| Transport"
+        - "MTA*NYCT"
+        - Zipcar
+        - Transit
 
   - id: subscriptions
     category: Subscriptions
@@ -178,6 +183,7 @@ categories:
         - name-cheap.com
         - fancy hands
         - three payg recurri
+        - "paramount+"
 
   - id: shopping
     category: Shopping
@@ -214,6 +220,9 @@ categories:
         - carter jonas
         - public storage
         - tv licence
+        - cleaning
+        - clean
+        - breckon
 
   - id: healthcare
     category: Healthcare
@@ -233,17 +242,6 @@ categories:
         - lloyds pharmacy
         - prescription
         - axa ppp
-
-  - id: children_family
-    category: Children / Family
-    match:
-      description_contains:
-        - nursery
-        - childcare
-        - school
-        - toys r us
-        - mothercare
-        - baby
 
   - id: giving
     category: Giving
