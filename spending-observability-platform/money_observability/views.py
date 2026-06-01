@@ -1,7 +1,16 @@
+from __future__ import annotations
+
+from pathlib import Path
+from django.db.models import QuerySet
+from .services.exclusion_rules import make_exclusions
+from .services.category_rules import make_categorizations
+from .services.ai_categorize import make_ai_categorizations
 import json
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal
+
+from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -12,8 +21,10 @@ from django.views.decorators.http import require_http_methods
 
 from .models import BudgetTreatment, BUDGET_TREATMENT_HINTS, Transaction
 from .services.import_service import import_uploaded_bytes, ImportSummary
-from .services.post_import import run_post_import_pipeline
 from .services.loaders import LoaderError
+from .services.exclusion_rules import make_exclusions
+from .services.category_rules import make_categorizations
+from .services.ai_categorize import make_ai_categorizations
 from .services.categories import (
     CATEGORIES,
     CATEGORY_MANUAL_REVIEW,
@@ -339,3 +350,21 @@ def upload_csv(request):
         return redirect("upload_csv")
 
     return render(request, "money_observability/upload.html")
+
+
+def run_post_import_pipeline(
+    rules_path: Path | None = None,
+) -> dict[str, int]:
+    """
+    Orchestrate the full suite of post-import tasks.
+    Used for bulk processing after a new import.
+    """
+    exclusions_updated = make_exclusions(rules_path=rules_path)
+    categories_updated = make_categorizations(rules_path=rules_path)
+    ai_updated = make_ai_categorizations()
+
+    return {
+        "exclusions_updated": exclusions_updated,
+        "categories_updated": categories_updated,
+        "ai_updated": ai_updated,
+    }
