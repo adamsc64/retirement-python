@@ -118,6 +118,63 @@ def _event_fingerprint(account_identifier: str, row: dict) -> str:
     return hashlib.sha256("|".join(parts).encode()).hexdigest()
 
 
+def create_transactions_from_rows(
+    batch, account, rows: list[dict], default_currency: str
+) -> int:
+    """Create Transaction objects from parsed rows, skipping semantic duplicates.
+
+    Deduplication logic:
+    1. Skip rows already present in this specific file hash (via source_row_key).
+    2. Skip rows that semantically match transactions in OTHER batches
+       (via event_fingerprint).
+
+    Returns the number of new transactions actually written to the DB.
+    """
+    from money_observability.models import Transaction
+
+    tx_objs = [
+        Transaction(
+            source_row_key=_source_row_key(file_hash=batch.file_hash, row_number=i),
+            event_fingerprint=_event_fingerprint(
+                account_identifier=account.account_identifier,
+                row=row,
+            ),
+            source_native_id=str(row.get("source_native_id", "")).strip(),
+            import_batch=batch,
+            account=account,
+            source_file=batch.source_file,
+            source_institution=batch.source_institution,
+            posted_date=row["posted_date"],
+            description_raw=row.get("description_raw", ""),
+            description_clean=row.get("description_raw", ""),
+            amount=row["amount"],
+            currency=row.get("currency", default_currency),
+            direction=row["direction"],
+        )
+        for i, row in enumerate(rows, start=1)
+    ]
+
+    # Cross-batch overlap check: skip individual transactions whose
+    # fingerprint already exists from a different import batch.
+    new_fingerprints = [tx.event_fingerprint for tx in tx_objs]
+    existing_fingerprints = set(
+        Transaction.objects.filter(event_fingerprint__in=new_fingerprints)
+        .exclude(import_batch=batch)
+        .values_list("event_fingerprint", flat=True)
+    )
+
+    if existing_fingerprints:
+        tx_objs = [
+            tx for tx in tx_objs if tx.event_fingerprint not in existing_fingerprints
+        ]
+
+    before = Transaction.objects.filter(import_batch=batch).count()
+    Transaction.objects.bulk_create(tx_objs, ignore_conflicts=True)
+    after = Transaction.objects.filter(import_batch=batch).count()
+
+    return after - before
+
+
 def import_uploaded_bytes(raw_bytes: bytes, filename: str) -> ImportSummary:
     """Parse *raw_bytes* as a CSV, detect the institution, and save transactions.
 
@@ -131,7 +188,7 @@ def import_uploaded_bytes(raw_bytes: bytes, filename: str) -> ImportSummary:
     Raises LoaderError if the file cannot be identified or parsed.
     """
     from django.db import transaction as db_transaction
-    from money_observability.models import Account, ImportBatch, Transaction
+    from money_observability.models import Account, ImportBatch
     from .loaders import GenericLoader, LoaderError, LOADER_REGISTRY
 
     sniff_result = GenericLoader().sniff(io.BytesIO(raw_bytes))
@@ -186,35 +243,15 @@ def import_uploaded_bytes(raw_bytes: bytes, filename: str) -> ImportSummary:
             },
         )
 
-        tx_objs = [
-            Transaction(
-                source_row_key=_source_row_key(file_hash=file_hash, row_number=i),
-                event_fingerprint=_event_fingerprint(
-                    account_identifier=account.account_identifier,
-                    row=row,
-                ),
-                source_native_id=str(row.get("source_native_id", "")).strip(),
-                import_batch=batch,
-                account=account,
-                source_file=filename,
-                source_institution=institution,
-                posted_date=row["posted_date"],
-                description_raw=row.get("description_raw", ""),
-                description_clean=row.get("description_raw", ""),
-                amount=row["amount"],
-                currency=row.get("currency", default_currency),
-                direction=row["direction"],
-            )
-            for i, row in enumerate(rows, start=1)
-        ]
+        new_count = create_transactions_from_rows(
+            batch=batch,
+            account=account,
+            rows=rows,
+            default_currency=default_currency,
+        )
 
-        before = Transaction.objects.filter(import_batch=batch).count()
-        Transaction.objects.bulk_create(tx_objs, ignore_conflicts=True)
-        after = Transaction.objects.filter(import_batch=batch).count()
-
-    new_count = after - before
     return ImportSummary(
         institution=institution,
         imported=new_count,
-        duplicate=len(tx_objs) - new_count,
+        duplicate=len(rows) - new_count,
     )

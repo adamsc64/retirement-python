@@ -75,8 +75,8 @@ def match_exclusion_rule(tx: Transaction, rule: ExclusionRule) -> bool:
     return True
 
 
-def make_exclusions(queryset, rules_path: Path | None = None) -> int:
-    """Apply exclusion rules to *queryset* and save changes.
+def make_exclusions(rules_path: Path | None = None) -> int:
+    """Apply exclusion rules to all transactions and save changes.
 
     Returns the number of transactions whose exclusion state changed.
     """
@@ -84,7 +84,7 @@ def make_exclusions(queryset, rules_path: Path | None = None) -> int:
 
     rules_path = rules_path or Path("rules/rules.yml")
     rules = load_exclusion_rules(rules_path)
-    txs = list(queryset.order_by("id"))
+    txs = list(Transaction.objects.all().order_by("id"))
     now = timezone.now()
     to_update: list[Transaction] = []
 

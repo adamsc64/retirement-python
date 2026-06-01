@@ -73,8 +73,8 @@ def match_category_rule(tx: Transaction, rule: CategoryRule) -> bool:
     return True
 
 
-def make_categorizations(queryset, rules_path: Path | None = None) -> int:
-    """Apply category rules to non-excluded transactions in *queryset* and save.
+def make_categorizations(rules_path: Path | None = None) -> int:
+    """Apply category rules to non-excluded transactions and save.
 
     Targets transactions where ``categorized_at`` is null or category is still
     ``CATEGORY_MANUAL_REVIEW``.  Returns the number of transactions updated.
@@ -83,7 +83,7 @@ def make_categorizations(queryset, rules_path: Path | None = None) -> int:
 
     rules_path = rules_path or Path("rules/rules.yml")
     rules = load_category_rules(rules_path)
-    base = queryset.filter(excluded=False)
+    base = Transaction.objects.filter(excluded=False)
     txs = list(base.filter(categorized_at__isnull=True).order_by("id")) + list(
         base.filter(category=CATEGORY_MANUAL_REVIEW).order_by("id")
     )

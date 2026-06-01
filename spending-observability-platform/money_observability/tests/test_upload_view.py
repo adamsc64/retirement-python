@@ -103,3 +103,29 @@ class UploadCSVViewTests(TestCase):
         msgs = [str(m) for m in response.context["messages"]]
         self.assertTrue(any("hsbc" in m for m in msgs), msgs)
         self.assertTrue(any("3 transaction" in m for m in msgs), msgs)
+
+    def test_post_upload_runs_pipeline(self):
+        from money_observability.models import Transaction
+
+        self.client.force_login(self.user)
+        # One excluded, one categorized
+        content = (
+            b"20/05/2026,AMERICAN EXPRESS DD,-446.29\n"
+            b"19/05/2026,TESCO STORES,-28.00\n"
+        )
+        hsbc_file = SimpleUploadedFile("hsbc.csv", content, content_type="text/csv")
+        response = self.client.post(self.url, {"csv_files": hsbc_file}, follow=True)
+
+        msgs = [str(m) for m in response.context["messages"]]
+        # Check success message includes the rules note
+        self.assertTrue(any("Rules applied" in m for m in msgs), msgs)
+
+        # Verify in DB
+        amex = Transaction.objects.get(description_raw__icontains="AMERICAN EXPRESS")
+        self.assertTrue(amex.excluded)
+        self.assertEqual(amex.exclusion_rule_id, "credit_card_payment")
+
+        tesco = Transaction.objects.get(description_raw__icontains="TESCO")
+        self.assertFalse(tesco.excluded)
+        self.assertEqual(tesco.category, "Food & Drink")
+        self.assertEqual(tesco.category_rule_id, "food")

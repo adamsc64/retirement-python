@@ -24,27 +24,19 @@ class Command(BaseCommand):
             default="rules/rules.yml",
             help="Path to exclusion rules YAML file (default: rules/rules.yml).",
         )
-        parser.add_argument(
-            "--source",
-            action="append",
-            dest="sources",
-            help="Optional source institution filter. Can be specified multiple times.",
-        )
 
     def handle(self, *args, **options):
         rules_path = Path(options["rules"])
-        source_filter = [s.lower() for s in (options.get("sources") or [])]
-
-        queryset = Transaction.objects.all()
-        if source_filter:
-            queryset = queryset.filter(source_institution__in=source_filter)
 
         try:
-            changed = make_exclusions(queryset, rules_path)
+            changed = make_exclusions(
+                rules_path=rules_path,
+            )
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Applied exclusions. Updated {changed} transaction(s)."
                 )
             )
+
         except ValueError as exc:
             raise CommandError(str(exc)) from exc

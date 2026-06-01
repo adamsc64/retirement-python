@@ -1,28 +1,20 @@
-from io import StringIO
 from pathlib import Path
 import tempfile
 
-from django.core.management import call_command
 from django.test import TestCase
-
 from money_observability.models import Transaction
+from money_observability.services.exclusion_rules import make_exclusions
+from money_observability.services.import_service import import_uploaded_bytes
 
 
 class ApplyExclusionsTests(TestCase):
     def setUp(self):
         self.base_dir = Path(__file__).resolve().parents[2]
-        call_command(
-            "import_transactions",
-            str(self.base_dir / "data" / "raw" / "citi"),
-            "--apply",
-            stdout=StringIO(),
-        )
-        call_command(
-            "import_transactions",
-            str(self.base_dir / "data" / "raw" / "wise"),
-            "--apply",
-            stdout=StringIO(),
-        )
+        # Files known to contain triggers
+        citi_file = self.base_dir / "data" / "raw" / "citi" / "citi-6518.CSV"
+        wise_file = sorted((self.base_dir / "data" / "raw" / "wise").rglob("*.csv"))[0]
+        import_uploaded_bytes(citi_file.read_bytes(), citi_file.name)
+        import_uploaded_bytes(wise_file.read_bytes(), wise_file.name)
 
     def _make_rules_file(self, content: str) -> Path:
         with tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False) as fh:
@@ -41,9 +33,14 @@ exclusions:
 """.strip()
         )
         try:
-            call_command(
-                "apply_exclusions", "--rules", str(rules_path), stdout=StringIO()
+            # Reset exclusions applied by automatic pipeline
+            Transaction.objects.all().update(
+                excluded=False,
+                exclusion_reason="",
+                exclusion_rule_id="",
+                excluded_at=None,
             )
+            make_exclusions(rules_path=rules_path)
         finally:
             rules_path.unlink(missing_ok=True)
 
@@ -65,16 +62,19 @@ exclusions:
 """.strip()
         )
         try:
-            first = StringIO()
-            call_command("apply_exclusions", "--rules", str(rules_path), stdout=first)
-
-            second = StringIO()
-            call_command("apply_exclusions", "--rules", str(rules_path), stdout=second)
+            Transaction.objects.all().update(
+                excluded=False,
+                exclusion_reason="",
+                exclusion_rule_id="",
+                excluded_at=None,
+            )
+            first_updated = make_exclusions(rules_path=rules_path)
+            second_updated = make_exclusions(rules_path=rules_path)
         finally:
             rules_path.unlink(missing_ok=True)
 
-        self.assertIn("Updated", first.getvalue())
-        self.assertIn("Updated 0 transaction(s)", second.getvalue())
+        self.assertGreater(first_updated, 0)
+        self.assertEqual(second_updated, 0)
 
     def test_amount_is_zero_rule_excludes_zero_rows(self):
         rules_path = self._make_rules_file(
@@ -87,9 +87,13 @@ exclusions:
 """.strip()
         )
         try:
-            call_command(
-                "apply_exclusions", "--rules", str(rules_path), stdout=StringIO()
+            Transaction.objects.all().update(
+                excluded=False,
+                exclusion_reason="",
+                exclusion_rule_id="",
+                excluded_at=None,
             )
+            make_exclusions(rules_path=rules_path)
         finally:
             rules_path.unlink(missing_ok=True)
 

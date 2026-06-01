@@ -12,6 +12,7 @@ from django.views.decorators.http import require_http_methods
 
 from .models import BudgetTreatment, BUDGET_TREATMENT_HINTS, Transaction
 from .services.import_service import import_uploaded_bytes, ImportSummary
+from .services.post_import import run_post_import_pipeline
 from .services.loaders import LoaderError
 from .services.categories import (
     CATEGORIES,
@@ -325,8 +326,14 @@ def upload_csv(request):
         for msg in errors:
             messages.error(request, msg)
         if accepted:
+            results = run_post_import_pipeline()
+            pipeline_note = (
+                f" Rules applied: {results['exclusions_updated']} exclusions, "
+                f"{results['categories_updated']} categories."
+            )
             messages.success(
-                request, f"Processed {len(accepted)} file(s): {', '.join(accepted)}"
+                request,
+                f"Processed {len(accepted)} file(s): {', '.join(accepted)}.{pipeline_note}",
             )
 
         return redirect("upload_csv")

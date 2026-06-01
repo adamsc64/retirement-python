@@ -24,12 +24,13 @@ class Command(BaseCommand):
 
         try:
             changed = make_categorizations(
-                Transaction.objects.filter(excluded=False), rules_path
+                rules_path=rules_path,
             )
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Applied categories. Updated {changed} transaction(s)."
                 )
             )
+
         except ValueError as exc:
             raise CommandError(str(exc)) from exc

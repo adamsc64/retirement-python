@@ -1,23 +1,19 @@
-from io import StringIO
 from pathlib import Path
 import tempfile
 
-from django.core.management import call_command
 from django.test import TestCase
-
 from money_observability.models import Transaction
+from money_observability.services.category_rules import make_categorizations
 from money_observability.services.categories import CATEGORY_MANUAL_REVIEW
+from money_observability.services.import_service import import_uploaded_bytes
 
 
 class ApplyCategoriesTests(TestCase):
     def setUp(self):
         self.base_dir = Path(__file__).resolve().parents[2]
-        call_command(
-            "import_transactions",
-            str(self.base_dir / "data" / "raw" / "citi"),
-            "--apply",
-            stdout=StringIO(),
-        )
+        # Use the specific file known to contain NETFLIX
+        citi_file = self.base_dir / "data" / "raw" / "citi" / "citi-6518.CSV"
+        import_uploaded_bytes(citi_file.read_bytes(), citi_file.name)
 
     def _make_rules_file(self, content: str) -> Path:
         with tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False) as fh:
@@ -36,9 +32,14 @@ categories:
 """.strip()
         )
         try:
-            call_command(
-                "apply_categories", "--rules", str(rules_path), stdout=StringIO()
+            # We must clear any existing categorization applied by the upload pipeline
+            # to ensure the test specifically verifies the make_categorizations call.
+            Transaction.objects.all().update(
+                category=CATEGORY_MANUAL_REVIEW,
+                category_rule_id="",
+                categorized_at=None,
             )
+            make_categorizations(rules_path=rules_path)
         finally:
             rules_path.unlink(missing_ok=True)
 
@@ -61,9 +62,12 @@ categories:
 """.strip()
         )
         try:
-            call_command(
-                "apply_categories", "--rules", str(rules_path), stdout=StringIO()
+            Transaction.objects.all().update(
+                category=CATEGORY_MANUAL_REVIEW,
+                category_rule_id="",
+                categorized_at=None,
             )
+            make_categorizations(rules_path=rules_path)
         finally:
             rules_path.unlink(missing_ok=True)
 
@@ -84,19 +88,22 @@ categories:
 """.strip()
         )
         try:
-            first = StringIO()
-            call_command("apply_categories", "--rules", str(rules_path), stdout=first)
-            second = StringIO()
-            call_command("apply_categories", "--rules", str(rules_path), stdout=second)
+            Transaction.objects.all().update(
+                category=CATEGORY_MANUAL_REVIEW,
+                category_rule_id="",
+                categorized_at=None,
+            )
+            first_updated = make_categorizations(rules_path=rules_path)
+            second_updated = make_categorizations(rules_path=rules_path)
         finally:
             rules_path.unlink(missing_ok=True)
 
-        self.assertIn("Updated", first.getvalue())
-        self.assertIn("Updated 0 transaction(s)", second.getvalue())
+        self.assertGreater(first_updated, 0)
+        self.assertEqual(second_updated, 0)
 
     def test_excluded_rows_are_skipped(self):
         # Exclude all transactions first, then categorize — nothing should be categorized.
-        Transaction.objects.all().update(excluded=True)
+        Transaction.objects.all().update(excluded=True, category=CATEGORY_MANUAL_REVIEW)
         rules_path = self._make_rules_file(
             """
 categories:
@@ -107,10 +114,9 @@ categories:
 """.strip()
         )
         try:
-            out = StringIO()
-            call_command("apply_categories", "--rules", str(rules_path), stdout=out)
+            updated = make_categorizations(rules_path=rules_path)
         finally:
             rules_path.unlink(missing_ok=True)
 
-        self.assertIn("Applied categories. Updated 0 transaction(s)", out.getvalue())
+        self.assertEqual(updated, 0)
         self.assertFalse(Transaction.objects.filter(category="Other").exists())

@@ -54,11 +54,10 @@ def categorize_batch(client: AIClient, batch: list[Transaction]) -> dict[str, st
 
 
 def make_ai_categorizations(
-    queryset,
     model: str = DEFAULT_MODEL,
     batch_size: int = DEFAULT_BATCH_SIZE,
 ) -> int:
-    """AI-categorize Manual Review transactions in *queryset* and save.
+    """AI-categorize Manual Review transactions and save.
 
     Returns the number of transactions updated.  Returns 0 without raising if
     OPENAI_KEY is unset or the openai package is not installed.
@@ -69,7 +68,9 @@ def make_ai_categorizations(
     if client is None:
         return 0
     txs = list(
-        queryset.filter(category=CATEGORY_MANUAL_REVIEW, excluded=False).order_by("id")
+        Transaction.objects.filter(
+            category=CATEGORY_MANUAL_REVIEW, excluded=False
+        ).order_by("id")
     )
     if not txs:
         return 0

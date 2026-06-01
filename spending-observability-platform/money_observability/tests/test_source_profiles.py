@@ -1,13 +1,14 @@
 from decimal import Decimal
-from io import StringIO
 from pathlib import Path
 from unittest import TestCase
 
-from django.core.management import call_command
 from django.test import TestCase as DjangoTestCase
 
 from money_observability.models import ImportBatch
-from money_observability.services.import_service import infer_source_metadata_from_path
+from money_observability.services.import_service import (
+    import_uploaded_bytes,
+    infer_source_metadata_from_path,
+)
 from money_observability.services.loaders import AmexLoader, HSBCLoader
 
 
@@ -70,20 +71,19 @@ class SourceProfileImportTests(DjangoTestCase):
     def setUp(self):
         self.base_dir = Path(__file__).resolve().parents[2]
 
-    def test_apply_records_profile_for_amex_and_hsbc(self):
-        stdout = StringIO()
-        call_command(
-            "import_transactions",
-            str(self.base_dir / "data" / "raw" / "amex"),
-            "--apply",
-            stdout=stdout,
+    def test_upload_records_profile_for_amex_and_hsbc(self):
+        amex_file = (
+            self.base_dir
+            / "data"
+            / "raw"
+            / "amex"
+            / "gbp"
+            / "uk-amex-2026-04-07_to-05-07.csv"
         )
-        call_command(
-            "import_transactions",
-            str(self.base_dir / "data" / "raw" / "hsbc"),
-            "--apply",
-            stdout=stdout,
-        )
+        hsbc_file = self.base_dir / "data" / "raw" / "hsbc" / "gbp" / "hsbc.csv"
+
+        import_uploaded_bytes(amex_file.read_bytes(), amex_file.name)
+        import_uploaded_bytes(hsbc_file.read_bytes(), hsbc_file.name)
 
         amex_batch = ImportBatch.objects.get(source_institution="amex")
         hsbc_batch = ImportBatch.objects.get(source_institution="hsbc")

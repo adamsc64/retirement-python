@@ -1,10 +1,7 @@
-from io import StringIO
 from pathlib import Path
-
-from django.core.management import call_command
 from django.test import TestCase
-
 from money_observability.models import Transaction
+from money_observability.services.import_service import import_uploaded_bytes
 
 
 class TransactionIdentityTests(TestCase):
@@ -12,12 +9,8 @@ class TransactionIdentityTests(TestCase):
         self.base_dir = Path(__file__).resolve().parents[2]
 
     def test_repeated_legitimate_purchases_are_not_collapsed(self):
-        call_command(
-            "import_transactions",
-            str(self.base_dir / "data" / "raw" / "wise"),
-            "--apply",
-            stdout=StringIO(),
-        )
+        wise_file = sorted((self.base_dir / "data" / "raw" / "wise").rglob("*.csv"))[0]
+        import_uploaded_bytes(wise_file.read_bytes(), wise_file.name)
 
         # Two distinct real-world purchases with same semantic attributes exist in Wise data:
         # 2026-04-25, Morse Bar | Trips, 8.21 GBP, debit.

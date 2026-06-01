@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand, CommandError
-
 from money_observability.models import Transaction
 from money_observability.services.ai_categorize import (
     DEFAULT_BATCH_SIZE,
@@ -31,10 +30,7 @@ class Command(BaseCommand):
         batch_size = options["batch_size"]
         model = options["model"]
 
-        queryset = Transaction.objects.all()
-
         updated = make_ai_categorizations(
-            queryset,
             model=model,
             batch_size=batch_size,
         )
