@@ -55,6 +55,127 @@ class BaseLoader:
         raise NotImplementedError
 
 
+class GenericAILoader(BaseLoader):
+    """Fallback loader for unidentified CSV formats.
+
+    Uses a ColumnMapping (typically produced by GenericLoader.detect_mapping)
+    to parse rows.
+    """
+
+    source_institution = "generic"
+
+    def __init__(self, mapping: ColumnMapping, **kwargs):
+        super().__init__(**kwargs)
+        self.mapping = mapping
+
+    def validate_headers(self, headers: list[str]) -> None:
+        # Validation is handled by the GenericLoader.detect_mapping logic.
+        pass
+
+    def parse_rows(self, file_path: Path) -> list[dict]:
+        with open(file_path, newline="", encoding="utf-8-sig") as fh:
+            reader = csv.DictReader(fh)
+            raw_rows = list(reader)
+
+        if not raw_rows:
+            return []
+
+        # Identify key columns from mapping.
+        date_col = self.mapping.posted_date[0] if self.mapping.posted_date else None
+        amount_cols = self.mapping.amount
+        desc_cols = self.mapping.description_raw
+
+        if not date_col:
+            raise LoaderError("No date column mapped")
+        if not amount_cols:
+            raise LoaderError("No amount column mapped")
+
+        # Detect date format.
+        date_values = [
+            r[date_col].strip()
+            for r in raw_rows
+            if r.get(date_col) and r[date_col].strip()
+        ]
+        if not date_values:
+            raise LoaderError(f"No date values found in column '{date_col}'")
+        date_fmt = sniff_dmy_or_mdy(date_values)
+
+        rows: list[dict] = []
+        for raw in raw_rows:
+            # posted_date
+            date_str = raw.get(date_col, "").strip()
+            if not date_str:
+                continue
+            try:
+                posted_date = datetime.strptime(date_str, date_fmt).date()
+            except ValueError as exc:
+                raise LoaderError(f"Cannot parse date '{date_str}': {exc}")
+
+            # amount
+            amount = Decimal(0)
+            amount_set = False
+
+            # Use the first amount column that has a value.
+            for col in amount_cols:
+                val = raw.get(col, "").replace(",", "").strip()
+                if not val:
+                    continue
+                try:
+                    amt = Decimal(val)
+                    # Heuristic: if column name contains 'debit', assume money out.
+                    if "debit" in col.lower() and amt > 0:
+                        amt = -amt
+                    # If column name contains 'credit', assume money in.
+                    elif "credit" in col.lower() and amt < 0:
+                        amt = abs(amt)
+
+                    amount = amt
+                    amount_set = True
+                    break
+                except (InvalidOperation, ValueError):
+                    continue
+
+            if not amount_set:
+                continue
+
+            # description_raw
+            desc_parts = [raw.get(col, "").strip() for col in desc_cols if raw.get(col)]
+            description = " | ".join(filter(None, desc_parts))
+
+            # currency
+            currency = self.default_currency
+            for col in self.mapping.currency:
+                val = raw.get(col, "").strip().upper()
+                if val:
+                    currency = val
+                    break
+
+            # direction
+            direction = "credit" if amount >= 0 else "debit"
+            for col in self.mapping.direction:
+                val = raw.get(col, "").strip().upper()
+                if val in ("IN", "CREDIT"):
+                    direction = "credit"
+                    amount = abs(amount)
+                    break
+                elif val in ("OUT", "DEBIT"):
+                    direction = "debit"
+                    amount = -abs(amount)
+                    break
+
+            rows.append(
+                {
+                    "posted_date": posted_date,
+                    "description_raw": description,
+                    "amount": amount,
+                    "currency": currency,
+                    "direction": direction,
+                }
+            )
+
+        return rows
+
+
 # ---------------------------------------------------------------------------
 # Citi
 # ---------------------------------------------------------------------------
@@ -88,16 +209,6 @@ class CitiLoader(BaseLoader):
 
     # ------------------------------------------------------------------ helpers
 
-    def _parse_date(self, value: str, file_path: Path) -> datetime.date:
-        sep = "-" if "-" in value else "/"
-        fmt = f"%m{sep}%d{sep}%Y"
-        try:
-            return datetime.strptime(value, fmt).date()
-        except ValueError as exc:
-            raise LoaderError(
-                f"Cannot parse date '{value}' in {file_path.name}: {exc}"
-            ) from exc
-
     def _parse_decimal(self, value: str, file_path: Path) -> Decimal:
         try:
             return Decimal(value)
@@ -122,41 +233,54 @@ class CitiLoader(BaseLoader):
 
     def parse_rows(self, file_path: Path) -> list[dict]:
         """Return a list of normalised row dicts for *file_path*."""
-        rows: list[dict] = []
-
         with open(file_path, newline="", encoding="utf-8-sig") as fh:
             reader = csv.DictReader(fh)
             self.validate_headers(reader.fieldnames or [])
+            raw_rows = list(reader)
 
-            for raw in reader:
-                debit_raw = (raw.get("Debit") or "").strip()
-                credit_raw = (raw.get("Credit") or "").strip()
+        date_fmt = sniff_dmy_or_mdy(
+            [
+                (r.get("Date") or "").strip()
+                for r in raw_rows
+                if (r.get("Date") or "").strip()
+            ]
+        )
 
-                if debit_raw:
-                    amount = -self._parse_decimal(debit_raw, file_path)
-                    direction = "debit"
-                elif credit_raw:
-                    credit_val = self._parse_decimal(credit_raw, file_path)
-                    # Checking credits are positive; credit-card credits are
-                    # stored as negative (payments/refunds). In both cases
-                    # money-in should be positive, so take abs().
-                    amount = abs(credit_val)
-                    direction = "credit"
-                else:
-                    # Row has neither debit nor credit; skip silently.
-                    continue
+        rows: list[dict] = []
+        for raw in raw_rows:
+            debit_raw = (raw.get("Debit") or "").strip()
+            credit_raw = (raw.get("Credit") or "").strip()
 
-                posted_date = self._parse_date(raw["Date"].strip(), file_path)
+            if debit_raw:
+                amount = -self._parse_decimal(debit_raw, file_path)
+                direction = "debit"
+            elif credit_raw:
+                credit_val = self._parse_decimal(credit_raw, file_path)
+                # Checking credits are positive; credit-card credits are
+                # stored as negative (payments/refunds). In both cases
+                # money-in should be positive, so take abs().
+                amount = abs(credit_val)
+                direction = "credit"
+            else:
+                # Row has neither debit nor credit; skip silently.
+                continue
 
-                rows.append(
-                    {
-                        "posted_date": posted_date,
-                        "description_raw": raw["Description"].strip(),
-                        "amount": amount,
-                        "currency": self.default_currency,
-                        "direction": direction,
-                    }
-                )
+            try:
+                posted_date = datetime.strptime(raw["Date"].strip(), date_fmt).date()
+            except ValueError as exc:
+                raise LoaderError(
+                    f"Cannot parse date '{raw['Date']}' in {file_path.name}: {exc}"
+                ) from exc
+
+            rows.append(
+                {
+                    "posted_date": posted_date,
+                    "description_raw": raw["Description"].strip(),
+                    "amount": amount,
+                    "currency": self.default_currency,
+                    "direction": direction,
+                }
+            )
 
         return rows
 
@@ -177,19 +301,23 @@ def sniff_dmy_or_mdy(date_values: list[str]) -> str:
 
     Raises LoaderError when the order cannot be determined.
     """
+    sep = "/"
     pairs: list[tuple[int, int]] = []
     for value in date_values:
-        parts = re.split(r"[/\-]", value.strip())
+        stripped = value.strip()
+        parts = re.split(r"[/\-]", stripped)
         if len(parts) < 2:
             continue
         try:
             a, b = int(parts[0]), int(parts[1])
         except ValueError:
             continue
+        if not pairs:
+            sep = "-" if "-" in stripped else "/"
         if a > 12:
-            return "%d/%m/%Y"
+            return f"%d{sep}%m{sep}%Y"
         if b > 12:
-            return "%m/%d/%Y"
+            return f"%m{sep}%d{sep}%Y"
         pairs.append((a, b))
 
     if len(pairs) < 2:
@@ -199,9 +327,9 @@ def sniff_dmy_or_mdy(date_values: list[str]) -> str:
     second_var = sum(abs(pairs[i][1] - pairs[i + 1][1]) for i in range(len(pairs) - 1))
 
     if first_var < second_var:
-        return "%m/%d/%Y"
+        return f"%m{sep}%d{sep}%Y"
     if second_var < first_var:
-        return "%d/%m/%Y"
+        return f"%d{sep}%m{sep}%Y"
     raise LoaderError("Cannot determine date order: ambiguous date sequence")
 
 
@@ -421,6 +549,7 @@ LOADER_REGISTRY: dict[str, type[BaseLoader]] = {
     "hsbc": HSBCLoader,
     "amex": AmexLoader,
     "wise": WiseLoader,
+    "generic": GenericAILoader,
 }
 
 
@@ -448,6 +577,7 @@ UNIVERSAL_COLUMN_MAP: dict[str, str | None] = {
     # posted_date
     "Date": "posted_date",  # citi (MM/DD/YYYY | MM-DD-YYYY), amex (DD/MM/YYYY)
     "Created on": "posted_date",  # wise (YYYY-MM-DD HH:MM:SS)
+    "Posting Date": "posted_date",  # chase
     # description_raw
     "Description": "description_raw",  # citi, amex
     "Reference": "description_raw",  # wise — primary description

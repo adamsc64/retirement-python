@@ -136,17 +136,23 @@ def import_uploaded_bytes(raw_bytes: bytes, filename: str) -> ImportSummary:
 
     sniff_result = GenericLoader().sniff(io.BytesIO(raw_bytes))
     institution = sniff_result.institution
+
     if institution is None:
-        raise LoaderError(
-            "institution could not be identified from column headers; cannot import"
+        institution = "generic"
+        default_currency = "USD"
+        profile = "generic_usd"
+        from .loaders import GenericAILoader
+
+        loader = GenericAILoader(
+            mapping=sniff_result.mapping, default_currency=default_currency
         )
-
-    default_currency = _UPLOAD_DEFAULT_CURRENCY.get(institution, "USD")
-    profile = f"{institution}_{default_currency.lower()}"
-
-    loader_cls = LOADER_REGISTRY.get(institution)
-    if loader_cls is None:
-        raise LoaderError(f"No loader registered for '{institution}'")
+    else:
+        default_currency = _UPLOAD_DEFAULT_CURRENCY.get(institution, "USD")
+        profile = f"{institution}_{default_currency.lower()}"
+        loader_cls = LOADER_REGISTRY.get(institution)
+        if loader_cls is None:
+            raise LoaderError(f"No loader registered for '{institution}'")
+        loader = loader_cls(default_currency=default_currency)
 
     file_hash = hashlib.sha256(raw_bytes).hexdigest()
 
@@ -155,7 +161,6 @@ def import_uploaded_bytes(raw_bytes: bytes, filename: str) -> ImportSummary:
     try:
         with os.fdopen(tmp_fd, "wb") as tmp:
             tmp.write(raw_bytes)
-        loader = loader_cls(default_currency=default_currency)
         rows = loader.parse_rows(Path(tmp_path_str))
     finally:
         os.unlink(tmp_path_str)
