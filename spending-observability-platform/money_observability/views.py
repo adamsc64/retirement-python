@@ -1,15 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
-from django.db.models import QuerySet
-from .services.exclusion_rules import make_exclusions
-from .services.category_rules import make_categorizations
-from .services.ai_categorize import make_ai_categorizations
 import json
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal
-
 from pathlib import Path
 
 from django.contrib import messages
@@ -19,20 +13,19 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from .models import BudgetTreatment, BUDGET_TREATMENT_HINTS, Transaction
-from .services.import_service import import_uploaded_bytes, ImportSummary
-from .services.loaders import LoaderError
-from .services.exclusion_rules import make_exclusions
-from .services.category_rules import make_categorizations
+from .models import BUDGET_TREATMENT_HINTS, BudgetTreatment, Transaction
 from .services.ai_categorize import make_ai_categorizations
 from .services.categories import (
     CATEGORIES,
     CATEGORY_MANUAL_REVIEW,
     CATEGORY_NAMES,
     CATEGORY_SET,
-    CATEGORY_TO_KEY,
     KEY_TO_CATEGORY,
 )
+from .services.category_rules import make_categorizations
+from .services.exclusion_rules import make_exclusions
+from .services.import_service import import_uploaded_bytes
+from .services.loaders import LoaderError
 
 
 @login_required(login_url="/admin/login/")

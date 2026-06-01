@@ -1,5 +1,5 @@
-from io import BytesIO
 from django.test import TestCase
+
 from money_observability.models import Transaction
 from money_observability.services.import_service import import_uploaded_bytes
 

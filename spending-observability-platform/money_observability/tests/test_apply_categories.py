@@ -1,10 +1,11 @@
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 from django.test import TestCase
+
 from money_observability.models import Transaction
-from money_observability.services.category_rules import make_categorizations
 from money_observability.services.categories import CATEGORY_MANUAL_REVIEW
+from money_observability.services.category_rules import make_categorizations
 from money_observability.services.import_service import import_uploaded_bytes
 
 

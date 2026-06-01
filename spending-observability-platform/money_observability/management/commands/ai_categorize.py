@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from django.core.management.base import BaseCommand, CommandError
-from money_observability.models import Transaction
+from django.core.management.base import BaseCommand
+
 from money_observability.services.ai_categorize import (
     DEFAULT_BATCH_SIZE,
     make_ai_categorizations,

@@ -1,10 +1,10 @@
-import io
 from decimal import Decimal
 from unittest.mock import patch
+
 from django.test import TestCase
-from money_observability.services.loaders import GenericLoader, LoaderError
+
+from money_observability.models import Transaction
 from money_observability.services.import_service import import_uploaded_bytes
-from money_observability.models import Transaction, Account
 
 
 class GenericAILoaderTest(TestCase):

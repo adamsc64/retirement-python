@@ -4,7 +4,6 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from money_observability.models import Transaction
 from money_observability.services.category_rules import make_categorizations
 
 

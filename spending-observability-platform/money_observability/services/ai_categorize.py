@@ -10,12 +10,12 @@ from __future__ import annotations
 import json
 
 from money_observability.models import Transaction
-from utils.ai_client import AIClient, DEFAULT_MODEL, get_ai_client
 from money_observability.services.categories import (
     CATEGORIES,
     CATEGORY_MANUAL_REVIEW,
     CATEGORY_SET,
 )
+from utils.ai_client import DEFAULT_MODEL, AIClient, get_ai_client
 
 DEFAULT_BATCH_SIZE = 20
 

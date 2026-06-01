@@ -1,6 +1,6 @@
+import tempfile
 from decimal import Decimal
 from pathlib import Path
-import tempfile
 from unittest import TestCase
 
 from money_observability.services.loaders import LoaderError, WiseLoader
