@@ -228,9 +228,9 @@
     <thead>
       <tr>
         <th class="col-check"></th>
-        <th><a class="sort-link{% if sort_base == 'date' %} active{% endif %}" href="?category={{ view_category }}&sort={% if sort == 'date' %}-date{% else %}date{% endif %}{% if start %}&start={{ start|date:'Y-m-d' }}{% endif %}{% if end %}&end={{ end|date:'Y-m-d' }}{% endif %}">Date{% if sort_base == 'date' %} {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}</a></th>
+        <th><a class="sort-link{% if sort_base == 'date' %} active{% endif %}" href="?category={{ view_category|urlencode }}&sort={% if sort == 'date' %}-date{% else %}date{% endif %}{% if start %}&start={{ start|date:'Y-m-d' }}{% endif %}{% if end %}&end={{ end|date:'Y-m-d' }}{% endif %}">Date{% if sort_base == 'date' %} {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}</a></th>
         <th>Description</th>
-        <th style="text-align:right"><a class="sort-link{% if sort_base == 'amount' %} active{% endif %}" href="?category={{ view_category }}&sort={% if sort == '-amount' %}amount{% else %}-amount{% endif %}{% if start %}&start={{ start|date:'Y-m-d' }}{% endif %}{% if end %}&end={{ end|date:'Y-m-d' }}{% endif %}">Amount{% if sort_base == 'amount' %} {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}</a></th>
+        <th style="text-align:right"><a class="sort-link{% if sort_base == 'amount' %} active{% endif %}" href="?category={{ view_category|urlencode }}&sort={% if sort == '-amount' %}amount{% else %}-amount{% endif %}{% if start %}&start={{ start|date:'Y-m-d' }}{% endif %}{% if end %}&end={{ end|date:'Y-m-d' }}{% endif %}">Amount{% if sort_base == 'amount' %} {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}</a></th>
         <th>Curr</th>
         <th>Category</th>
         <th class="col-budg"></th>
