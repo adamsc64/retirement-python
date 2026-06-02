@@ -59,19 +59,32 @@ def load_category_rules(path: Path) -> list[CategoryRule]:
 
 
 def match_category_rule(tx: Transaction, rule: CategoryRule) -> bool:
+    return best_match_token_len(tx, rule) is not None
+
+
+def best_match_token_len(tx: Transaction, rule: CategoryRule) -> int | None:
+    """Return the length of the longest matching description_contains token for
+    *rule* against *tx*, or ``None`` if the rule does not match at all.
+
+    Rules that match purely on non-description criteria (source_institution_in /
+    direction_in) score 0 so they lose to any description-based match.
+    """
     desc = (tx.description_raw or "").lower()
     source = (tx.source_institution or "").lower()
     direction = (tx.direction or "").lower()
 
-    if rule.description_contains and not any(
-        token in desc for token in rule.description_contains
-    ):
-        return False
     if rule.source_institution_in and source not in rule.source_institution_in:
-        return False
+        return None
     if rule.direction_in and direction not in rule.direction_in:
-        return False
-    return True
+        return None
+
+    if rule.description_contains:
+        matching_lens = [len(t) for t in rule.description_contains if t in desc]
+        if not matching_lens:
+            return None
+        return max(matching_lens)
+
+    return 0  # matches on non-description criteria only
 
 
 def make_categorizations(
@@ -95,7 +108,14 @@ def make_categorizations(
     changes: list[CategorizationChange] = []
 
     for tx in txs:
-        matched_rule = next((r for r in rules if match_category_rule(tx, r)), None)
+        best_rule: CategoryRule | None = None
+        best_len = -1
+        for rule in rules:
+            token_len = best_match_token_len(tx, rule)
+            if token_len is not None and token_len > best_len:
+                best_len = token_len
+                best_rule = rule
+        matched_rule = best_rule
         desired_category = (
             matched_rule.category if matched_rule else CATEGORY_MANUAL_REVIEW
         )
