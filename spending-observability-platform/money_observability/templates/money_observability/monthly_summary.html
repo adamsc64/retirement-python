@@ -265,15 +265,15 @@
           <th>Category</th>
           <th>
             Cash Outflow
-            <span class="col-hint">every debit</span>
+            <span class="col-hint">every debit · USD</span>
           </th>
           <th>
             Baseline Burn
-            <span class="col-hint">ordinary only</span>
+            <span class="col-hint">ordinary only · USD</span>
           </th>
           <th>
             Planning Burn
-            <span class="col-hint">ordinary + annual÷12 + irregular÷12</span>
+            <span class="col-hint">ordinary + annual÷12 + irregular÷12 · USD</span>
           </th>
           <th>Txns</th>
         </tr>
@@ -290,21 +290,21 @@
             <td>
               {% for e in row.entries %}
                 <span class="currency-block">
-                  <span class="cur-badge">{{ e.currency }}</span><span class="amount {% if e.cash == 0 %}zero{% endif %}">{{ e.cash }}</span>
+                  <span class="amount {% if e.cash == 0 %}zero{% endif %}">{{ e.cash }}</span>
                 </span>
               {% endfor %}
             </td>
             <td>
               {% for e in row.entries %}
                 <span class="currency-block">
-                  <span class="cur-badge">{{ e.currency }}</span><span class="amount {% if e.baseline == 0 %}zero{% endif %}">{{ e.baseline }}</span>
+                  <span class="amount {% if e.baseline == 0 %}zero{% endif %}">{{ e.baseline }}</span>
                 </span>
               {% endfor %}
             </td>
             <td>
               {% for e in row.entries %}
                 <span class="currency-block">
-                  <span class="cur-badge">{{ e.currency }}</span><span class="amount {% if e.planning == 0 %}zero{% endif %}">{{ e.planning }}</span>
+                  <span class="amount {% if e.planning == 0 %}zero{% endif %}">{{ e.planning }}</span>
                 </span>
               {% endfor %}
             </td>
@@ -321,17 +321,17 @@
           <td>Total</td>
           <td>
             {% for t in total_rows %}
-              <span class="currency-block"><span class="cur-badge">{{ t.currency }}</span>{{ t.cash }}</span>
+              <span class="currency-block">{{ t.cash }}</span>
             {% endfor %}
           </td>
           <td>
             {% for t in total_rows %}
-              <span class="currency-block"><span class="cur-badge">{{ t.currency }}</span>{{ t.baseline }}</span>
+              <span class="currency-block">{{ t.baseline }}</span>
             {% endfor %}
           </td>
           <td>
             {% for t in total_rows %}
-              <span class="currency-block"><span class="cur-badge">{{ t.currency }}</span>{{ t.planning }}</span>
+              <span class="currency-block">{{ t.planning }}</span>
             {% endfor %}
           </td>
           <td>
@@ -347,7 +347,8 @@
   <div class="legend">
     <span>Cash Outflow</span> — every non-excluded debit, regardless of budget treatment.<br>
     <span>Baseline Burn</span> — ordinary recurring monthly spend only.<br>
-    <span>Planning Burn</span> — ordinary + annual amounts ÷ 12 + irregular amounts ÷ 12.
+    <span>Planning Burn</span> — ordinary + annual amounts ÷ 12 + irregular amounts ÷ 12.<br>
+    All amounts in USD. Fixed rates: GBP 1.27, EUR 1.08 — set in <code>FX_TO_USD</code> in views.py.
   </div>
 
   {% else %}

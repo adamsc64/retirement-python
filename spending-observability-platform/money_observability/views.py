@@ -27,6 +27,14 @@ from .services.exclusion_rules import make_exclusions
 from .services.import_service import import_uploaded_bytes
 from .services.loaders import LoaderError
 
+# Fixed exchange rates to USD for the summary report.
+# Update these as needed; original transaction currencies are never modified.
+FX_TO_USD: dict[str, Decimal] = {
+    "USD": Decimal("1.00"),
+    "GBP": Decimal("1.27"),
+    "EUR": Decimal("1.08"),
+}
+
 
 @login_required(login_url="/admin/login/")
 def index(request):
@@ -233,8 +241,8 @@ def monthly_summary(request):
         posted_date__lte=end,
     ).values("category", "currency", "budget_treatment", "amount")
 
-    # Accumulate per (category, currency).
-    # Shape: {category: {currency: {"cash": D, "baseline": D, "planning": D, "count": int}}}
+    # Accumulate per category, converting all amounts to USD via FX_TO_USD.
+    # Shape: {category: {"USD": {"cash": D, "baseline": D, "planning": D, "count": int}}}
     raw_data: dict = defaultdict(
         lambda: defaultdict(
             lambda: {
@@ -249,9 +257,10 @@ def monthly_summary(request):
     for tx in qs:
         cat = tx["category"] or CATEGORY_MANUAL_REVIEW
         cur = tx["currency"]
-        amt = abs(tx["amount"])
+        fx = FX_TO_USD.get(cur, Decimal("1.00"))
+        amt = abs(tx["amount"]) * fx
         bt = tx["budget_treatment"]
-        cell = raw_data[cat][cur]
+        cell = raw_data[cat]["USD"]
         cell["cash"] += amt
         cell["count"] += 1
         if bt == BudgetTreatment.ORDINARY:
