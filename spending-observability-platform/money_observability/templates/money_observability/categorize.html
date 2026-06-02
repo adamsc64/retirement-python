@@ -273,6 +273,7 @@
   const CATEGORIES = {{ key_to_category_json|safe }}; // {lowercase_key: category}
 
   let cursor = 0;
+  let lastCheckedIdx = null;
   const selected = new Set(); // indices into current rows()
 
   function rows() {
@@ -498,7 +499,17 @@
     if (!row) return;
     if (e.target.closest('.col-check')) {
       const idx = rows().indexOf(row);
-      if (idx !== -1) toggleSelect(idx);
+      if (idx !== -1) {
+        if (e.shiftKey && lastCheckedIdx !== null) {
+          const lo = Math.min(lastCheckedIdx, idx);
+          const hi = Math.max(lastCheckedIdx, idx);
+          for (let i = lo; i <= hi; i++) selected.add(i);
+          refresh();
+        } else {
+          toggleSelect(idx);
+        }
+        lastCheckedIdx = idx;
+      }
       return;
     }
     const id = row.dataset.id;
