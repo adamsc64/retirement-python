@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import json
 
+
+from dataclasses import dataclass
+
 from money_observability.models import Transaction
 from money_observability.services.categories import (
     CATEGORIES,
@@ -18,6 +21,14 @@ from money_observability.services.categories import (
 from utils.ai_client import DEFAULT_MODEL, AIClient, get_ai_client
 
 DEFAULT_BATCH_SIZE = 20
+
+
+@dataclass(frozen=True)
+class CategorizationChange:
+    tx: Transaction
+    category: str
+    rule_id: str
+
 
 _CATEGORY_LIST = "\n".join(f"  - {c.name}: {c.ai_hint}" for c in CATEGORIES)
 
@@ -56,27 +67,29 @@ def categorize_batch(client: AIClient, batch: list[Transaction]) -> dict[str, st
 def make_ai_categorizations(
     model: str = DEFAULT_MODEL,
     batch_size: int = DEFAULT_BATCH_SIZE,
-) -> int:
+) -> list[CategorizationChange]:
     """AI-categorize Manual Review transactions and save.
 
-    Returns the number of transactions updated.  Returns 0 without raising if
-    OPENAI_KEY is unset or the openai package is not installed.
+    Returns a list of CategorizationChange records for each update.
+    Returns an empty list without raising if OPENAI_KEY is unset or the openai
+    package is not installed.
     """
     from django.utils import timezone
 
     client = get_ai_client(model=model)
     if client is None:
-        return 0
+        return []
     txs = list(
         Transaction.objects.filter(
             category=CATEGORY_MANUAL_REVIEW, excluded=False
         ).order_by("id")
     )
     if not txs:
-        return 0
+        return []
 
     now = timezone.now()
     to_update: list[Transaction] = []
+    changes: list[CategorizationChange] = []
     valid_set = CATEGORY_SET
 
     for batch_start in range(0, len(txs), batch_size):
@@ -86,8 +99,12 @@ def make_ai_categorizations(
             category = results.get(str(tx.id))
             if category not in valid_set:
                 continue
+            rule_id = f"ai:{model}"
+            changes.append(
+                CategorizationChange(tx=tx, category=category, rule_id=rule_id)
+            )
             tx.category = category
-            tx.category_rule_id = f"ai:{model}"
+            tx.category_rule_id = rule_id
             tx.categorized_at = tx.categorized_at or now
             to_update.append(tx)
 
@@ -97,4 +114,4 @@ def make_ai_categorizations(
             ["category", "category_rule_id", "categorized_at"],
         )
 
-    return len(to_update)
+    return changes

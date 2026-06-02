@@ -357,7 +357,7 @@ def run_post_import_pipeline(
     ai_updated = make_ai_categorizations()
 
     return {
-        "exclusions_updated": exclusions_updated,
-        "categories_updated": categories_updated,
-        "ai_updated": ai_updated,
+        "exclusions_updated": len(exclusions_updated),
+        "categories_updated": len(categories_updated),
+        "ai_updated": len(ai_updated),
     }

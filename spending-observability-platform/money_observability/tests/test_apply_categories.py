@@ -99,8 +99,8 @@ categories:
         finally:
             rules_path.unlink(missing_ok=True)
 
-        self.assertGreater(first_updated, 0)
-        self.assertEqual(second_updated, 0)
+        self.assertGreater(len(first_updated), 0)
+        self.assertEqual(len(second_updated), 0)
 
     def test_excluded_rows_are_skipped(self):
         # Exclude all transactions first, then categorize — nothing should be categorized.
@@ -119,5 +119,5 @@ categories:
         finally:
             rules_path.unlink(missing_ok=True)
 
-        self.assertEqual(updated, 0)
+        self.assertEqual(len(updated), 0)
         self.assertFalse(Transaction.objects.filter(category="Other").exists())

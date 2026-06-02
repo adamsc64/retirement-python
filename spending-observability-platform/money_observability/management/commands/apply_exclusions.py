@@ -28,12 +28,19 @@ class Command(BaseCommand):
         rules_path = Path(options["rules"])
 
         try:
-            changed = make_exclusions(
+            changes = make_exclusions(
                 rules_path=rules_path,
             )
+            for change in changes:
+                desc = change.tx.description_clean or change.tx.description_raw
+                status = "EXCLUDED" if change.excluded else "RESTORED"
+                self.stdout.write(
+                    f"  [{status:10s}] {desc[:60]:60s}  (reason: {change.reason}, rule: {change.rule_id})"
+                )
+
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Applied exclusions. Updated {changed} transaction(s)."
+                    f"\nApplied exclusions. Updated {len(changes)} transaction(s)."
                 )
             )
 

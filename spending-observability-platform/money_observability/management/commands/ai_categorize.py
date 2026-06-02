@@ -30,14 +30,20 @@ class Command(BaseCommand):
         batch_size = options["batch_size"]
         model = options["model"]
 
-        updated = make_ai_categorizations(
+        changes = make_ai_categorizations(
             model=model,
             batch_size=batch_size,
         )
-        if updated > 0:
+        for change in changes:
+            desc = change.tx.description_clean or change.tx.description_raw
+            self.stdout.write(
+                f"  [{change.category:20s}] {desc[:60]:60s}  (rule: {change.rule_id})"
+            )
+
+        if changes:
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"AI categorization complete. Updated {updated} transaction(s)."
+                    f"\nAI categorization complete. Updated {len(changes)} transaction(s)."
                 )
             )
         else:

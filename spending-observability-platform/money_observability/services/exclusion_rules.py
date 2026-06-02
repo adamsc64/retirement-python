@@ -19,6 +19,14 @@ class ExclusionRule:
     amount_is_zero: bool = False
 
 
+@dataclass(frozen=True)
+class ExclusionChange:
+    tx: Transaction
+    excluded: bool
+    reason: str
+    rule_id: str
+
+
 def load_exclusion_rules(path: Path) -> list[ExclusionRule]:
     if not path.exists():
         raise ValueError(f"Rules file not found: {path}")
@@ -75,10 +83,12 @@ def match_exclusion_rule(tx: Transaction, rule: ExclusionRule) -> bool:
     return True
 
 
-def make_exclusions(rules_path: Path | None = None) -> int:
+def make_exclusions(
+    rules_path: Path | None = None,
+) -> list[ExclusionChange]:
     """Apply exclusion rules to all transactions and save changes.
 
-    Returns the number of transactions whose exclusion state changed.
+    Returns a list of ExclusionChange records for each modified transaction.
     """
     from django.utils import timezone
 
@@ -87,6 +97,7 @@ def make_exclusions(rules_path: Path | None = None) -> int:
     txs = list(Transaction.objects.all().order_by("id"))
     now = timezone.now()
     to_update: list[Transaction] = []
+    changes: list[ExclusionChange] = []
 
     for tx in txs:
         matched_rule = next((r for r in rules if match_exclusion_rule(tx, r)), None)
@@ -107,6 +118,14 @@ def make_exclusions(rules_path: Path | None = None) -> int:
             tx.excluded_at,
         )
         if current != desired:
+            changes.append(
+                ExclusionChange(
+                    tx=tx,
+                    excluded=desired[0],
+                    reason=desired[1],
+                    rule_id=desired[2],
+                )
+            )
             tx.excluded, tx.exclusion_reason, tx.exclusion_rule_id, tx.excluded_at = (
                 desired
             )
@@ -118,4 +137,4 @@ def make_exclusions(rules_path: Path | None = None) -> int:
             ["excluded", "exclusion_reason", "exclusion_rule_id", "excluded_at"],
         )
 
-    return len(to_update)
+    return changes

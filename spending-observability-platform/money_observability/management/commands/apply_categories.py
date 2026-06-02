@@ -22,12 +22,18 @@ class Command(BaseCommand):
         rules_path = Path(options["rules"])
 
         try:
-            changed = make_categorizations(
+            changes = make_categorizations(
                 rules_path=rules_path,
             )
+            for change in changes:
+                desc = change.tx.description_clean or change.tx.description_raw
+                self.stdout.write(
+                    f"  [{change.category:20s}] {desc[:60]:60s}  (rule: {change.rule_id})"
+                )
+
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Applied categories. Updated {changed} transaction(s)."
+                    f"\nApplied categories. Updated {len(changes)} transaction(s)."
                 )
             )
 

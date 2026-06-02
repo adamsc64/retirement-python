@@ -7,6 +7,7 @@ import yaml
 
 from money_observability.models import Transaction
 from money_observability.services.categories import CATEGORY_MANUAL_REVIEW
+from .ai_categorize import CategorizationChange
 
 
 @dataclass(frozen=True)
@@ -73,11 +74,13 @@ def match_category_rule(tx: Transaction, rule: CategoryRule) -> bool:
     return True
 
 
-def make_categorizations(rules_path: Path | None = None) -> int:
+def make_categorizations(
+    rules_path: Path | None = None,
+) -> list[CategorizationChange]:
     """Apply category rules to non-excluded transactions and save.
 
     Targets transactions where ``categorized_at`` is null or category is still
-    ``CATEGORY_MANUAL_REVIEW``.  Returns the number of transactions updated.
+    ``CATEGORY_MANUAL_REVIEW``.  Returns a list of CategorizationChange records.
     """
     from django.utils import timezone
 
@@ -89,6 +92,7 @@ def make_categorizations(rules_path: Path | None = None) -> int:
     )
     now = timezone.now()
     to_update: list[Transaction] = []
+    changes: list[CategorizationChange] = []
 
     for tx in txs:
         matched_rule = next((r for r in rules if match_category_rule(tx, r)), None)
@@ -98,6 +102,13 @@ def make_categorizations(rules_path: Path | None = None) -> int:
         desired_rule_id = matched_rule.rule_id if matched_rule else ""
 
         if tx.category != desired_category or tx.category_rule_id != desired_rule_id:
+            changes.append(
+                CategorizationChange(
+                    tx=tx,
+                    category=desired_category,
+                    rule_id=desired_rule_id,
+                )
+            )
             tx.category = desired_category
             tx.category_rule_id = desired_rule_id
             tx.categorized_at = tx.categorized_at or now
@@ -109,4 +120,4 @@ def make_categorizations(rules_path: Path | None = None) -> int:
             ["category", "category_rule_id", "categorized_at"],
         )
 
-    return len(to_update)
+    return changes

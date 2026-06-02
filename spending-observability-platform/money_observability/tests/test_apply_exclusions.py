@@ -74,8 +74,8 @@ exclusions:
         finally:
             rules_path.unlink(missing_ok=True)
 
-        self.assertGreater(first_updated, 0)
-        self.assertEqual(second_updated, 0)
+        self.assertGreater(len(first_updated), 0)
+        self.assertEqual(len(second_updated), 0)
 
     def test_amount_is_zero_rule_excludes_zero_rows(self):
         rules_path = self._make_rules_file(
