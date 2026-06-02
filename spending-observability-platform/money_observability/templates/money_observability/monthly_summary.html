@@ -197,14 +197,6 @@
     const endInput = document.getElementById('end');
     const container = document.getElementById('month-shortcuts');
 
-    // Determine which year to use: prefer the year already in the start input,
-    // fall back to the current year.
-    function activeYear() {
-      const v = startInput.value;
-      if (v && v.length >= 4) return parseInt(v.slice(0, 4), 10);
-      return new Date().getFullYear();
-    }
-
     function pad(n) { return String(n).padStart(2, '0'); }
 
     function lastDay(year, month1) {
@@ -212,7 +204,8 @@
       return new Date(year, month1, 0).getDate();
     }
 
-    function currentActiveMonth() {
+    // Returns {year, month} if inputs represent a full calendar month, else null.
+    function currentActiveYearMonth() {
       const s = startInput.value;
       const e = endInput.value;
       if (!s || !e) return null;
@@ -221,28 +214,36 @@
       if (sy !== ey || sm !== em) return null;
       if (sd !== 1) return null;
       if (ed !== lastDay(sy, sm)) return null;
-      return sm; // 1-based
+      return { year: sy, month: sm };
     }
 
     function renderButtons() {
-      const active = currentActiveMonth();
+      const active = currentActiveYearMonth();
       container.innerHTML = '';
-      const year = activeYear();
-      MONTHS.forEach(function(label, i) {
-        const m = i + 1; // 1-based
+      const today = new Date();
+      const curYear = today.getFullYear();
+      const curMonth = today.getMonth() + 1; // 1-based
+
+      // Show this month + 11 months back (12 total), oldest first.
+      for (let i = 11; i >= 0; i--) {
+        let m = curMonth - i;
+        let y = curYear;
+        if (m <= 0) { m += 12; y -= 1; }
+
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.textContent = label + ' ' + year;
-        if (m === active) btn.classList.add('active');
-        btn.addEventListener('click', function () {
-          const y = activeYear();
-          startInput.value = y + '-' + pad(m) + '-01';
-          endInput.value   = y + '-' + pad(m) + '-' + pad(lastDay(y, m));
-          renderButtons();
-          document.getElementById('range-form').submit();
-        });
+        btn.textContent = MONTHS[m - 1] + ' ' + y;
+        if (active && active.year === y && active.month === m) btn.classList.add('active');
+        btn.addEventListener('click', (function (month, year) {
+          return function () {
+            startInput.value = year + '-' + pad(month) + '-01';
+            endInput.value   = year + '-' + pad(month) + '-' + pad(lastDay(year, month));
+            renderButtons();
+            document.getElementById('range-form').submit();
+          };
+        })(m, y));
         container.appendChild(btn);
-      });
+      }
     }
 
     renderButtons();
