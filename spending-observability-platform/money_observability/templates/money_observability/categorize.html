@@ -217,7 +217,7 @@
       <col class="col-desc">
       <col class="col-amount">
       <col class="col-curr">
-      {% if show_category %}<col class="col-cat">{% endif %}
+      <col class="col-cat">
       <col class="col-budg">
     </colgroup>
     <thead>
@@ -227,7 +227,7 @@
         <th>Description</th>
         <th style="text-align:right">Amount</th>
         <th>Curr</th>
-        {% if show_category %}<th>Category</th>{% endif %}
+        <th>Category</th>
         <th class="col-budg"></th>
       </tr>
     </thead>
@@ -239,7 +239,7 @@
         <td title="{{ tx.description_raw }}">{{ tx.display_desc }}</td>
         <td class="amount-cell" style="text-align:right">{{ tx.display_amount|floatformat:2 }}</td>
         <td>{{ tx.currency }}</td>
-        {% if show_category %}<td class="col-cat">{{ tx.category }}</td>{% endif %}
+        <td class="col-cat">{{ tx.category }}</td>
         <td class="col-budg">{% if tx.budget_treatment == 'annual' %}A{% elif tx.budget_treatment == 'ordinary' %}O{% elif tx.budget_treatment == 'irregular' %}I{% elif tx.budget_treatment == 'one_off' %}X{% endif %}</td>
       </tr>
       {% endfor %}

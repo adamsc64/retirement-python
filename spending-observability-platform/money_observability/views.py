@@ -105,7 +105,6 @@ def categorize_queue(request):
             "view_category": view_category,
             "all_view_categories": all_view_categories,
             "view_all_sentinel": VIEW_ALL,
-            "show_category": view_category == VIEW_ALL,
             "start": start,
             "end": end,
             "budget_hints": BUDGET_TREATMENT_HINTS,
