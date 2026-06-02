@@ -19,7 +19,9 @@ class WiseLoaderTests(TestCase):
 
         first = rows[0]
         self.assertEqual(str(first["posted_date"]), "2026-05-07")
-        self.assertEqual(first["description_raw"], "scans - 2.5 hrs | General")
+        self.assertEqual(
+            first["description_raw"], "Reyam Rammahi | scans - 2.5 hrs | General"
+        )
         self.assertEqual(first["amount"], Decimal("-45.0"))
         self.assertEqual(first["currency"], "GBP")
         self.assertEqual(first["direction"], "debit")

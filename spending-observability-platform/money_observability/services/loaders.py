@@ -521,11 +521,9 @@ class WiseLoader(BaseLoader):
                 currency = (
                     raw.get("Source currency") or ""
                 ).strip().upper() or self.default_currency
-                description = (
-                    (raw.get("Reference") or "").strip()
-                    or counterparty
-                    or (raw.get("ID") or "").strip()
-                )
+                reference = (raw.get("Reference") or "").strip()
+                desc_parts = [p for p in [counterparty, reference] if p]
+                description = " | ".join(desc_parts) or (raw.get("ID") or "").strip()
                 category = (raw.get("Category") or "").strip()
                 if category:
                     description = f"{description} | {category}"
