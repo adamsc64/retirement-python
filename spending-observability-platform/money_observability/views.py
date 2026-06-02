@@ -185,6 +185,31 @@ def assign_budget(request):
 
 
 @login_required(login_url="/admin/login/")
+@require_http_methods(["POST"])
+def exclude_transactions(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "invalid JSON"}, status=400)
+
+    ids = data.get("ids", [])
+    if not ids or not isinstance(ids, list):
+        return JsonResponse({"error": "ids required"}, status=400)
+    try:
+        ids = [int(i) for i in ids]
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "invalid ids"}, status=400)
+
+    excluded = Transaction.objects.filter(id__in=ids).update(
+        excluded=True,
+        exclusion_reason="manual_ui",
+        exclusion_rule_id="manual_ui",
+        excluded_at=timezone.now(),
+    )
+    return JsonResponse({"excluded": excluded})
+
+
+@login_required(login_url="/admin/login/")
 def monthly_summary(request):
     today = date.today()
     default_start = today.replace(day=1)
