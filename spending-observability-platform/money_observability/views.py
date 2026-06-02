@@ -52,7 +52,7 @@ def index(request):
 def categorize_queue(request):
     VIEW_ALL = "__all__"
     all_view_categories = [VIEW_ALL] + [CATEGORY_MANUAL_REVIEW] + CATEGORY_NAMES
-    view_category = request.GET.get("view_category", CATEGORY_MANUAL_REVIEW)
+    view_category = request.GET.get("category", CATEGORY_MANUAL_REVIEW)
     if view_category not in frozenset(all_view_categories):
         view_category = CATEGORY_MANUAL_REVIEW
 
@@ -67,6 +67,18 @@ def categorize_queue(request):
     except ValueError:
         end = None
 
+    SORT_OPTIONS = {
+        "date": ("posted_date", "description_clean"),
+        "-date": ("-posted_date", "description_clean"),
+        "amount": ("amount",),
+        "-amount": ("-amount",),
+    }
+    sort = request.GET.get("sort", "date")
+    if sort not in SORT_OPTIONS:
+        sort = "date"
+    sort_base = sort.lstrip("-")
+    sort_dir = "desc" if sort.startswith("-") else "asc"
+
     qs = Transaction.objects.filter(excluded=False, direction="debit")
     if start:
         qs = qs.filter(posted_date__gte=start)
@@ -76,7 +88,7 @@ def categorize_queue(request):
         qs = qs.filter(category=view_category)
 
     raw = list(
-        qs.order_by("posted_date", "description_clean").values(
+        qs.order_by(*SORT_OPTIONS[sort]).values(
             "id",
             "posted_date",
             "description_clean",
@@ -105,6 +117,9 @@ def categorize_queue(request):
             "view_category": view_category,
             "all_view_categories": all_view_categories,
             "view_all_sentinel": VIEW_ALL,
+            "sort": sort,
+            "sort_base": sort_base,
+            "sort_dir": sort_dir,
             "start": start,
             "end": end,
             "budget_hints": BUDGET_TREATMENT_HINTS,

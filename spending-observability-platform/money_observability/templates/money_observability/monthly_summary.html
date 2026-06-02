@@ -283,7 +283,7 @@
           <tr>
             <td>
               <a class="cat-name {% if row.category == 'Manual Review' %}manual-review{% endif %}"
-                 href="/categorize/?view_category={{ row.category|urlencode }}&start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">
+                 href="/categorize/?category={{ row.category|urlencode }}&start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">
                 {{ row.category }}
               </a>
             </td>

@@ -170,6 +170,11 @@
     .budg-btn:hover { background: #45475a; border-color: #585b70; }
     .budg-btn:focus { outline: 2px solid #94e2d5; outline-offset: 1px; }
     .budg-btn .shortcut { display: inline-block; margin-right: 5px; color: #f38ba8; font-weight: bold; }
+    /* ── Sort links ──────────────────────────────────────────── */
+    th a.sort-link { color: inherit; text-decoration: none; }
+    th a.sort-link:hover { color: #cdd6f4; }
+    th a.sort-link.active { color: #89b4fa; }
+
     /* ── Empty state ─────────────────────────────────────────── */
     .empty-state {
       padding: 60px 20px;
@@ -223,9 +228,9 @@
     <thead>
       <tr>
         <th class="col-check"></th>
-        <th>Date</th>
+        <th><a class="sort-link{% if sort_base == 'date' %} active{% endif %}" href="?category={{ view_category }}&sort={% if sort == 'date' %}-date{% else %}date{% endif %}{% if start %}&start={{ start|date:'Y-m-d' }}{% endif %}{% if end %}&end={{ end|date:'Y-m-d' }}{% endif %}">Date{% if sort_base == 'date' %} {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}</a></th>
         <th>Description</th>
-        <th style="text-align:right">Amount</th>
+        <th style="text-align:right"><a class="sort-link{% if sort_base == 'amount' %} active{% endif %}" href="?category={{ view_category }}&sort={% if sort == '-amount' %}amount{% else %}-amount{% endif %}{% if start %}&start={{ start|date:'Y-m-d' }}{% endif %}{% if end %}&end={{ end|date:'Y-m-d' }}{% endif %}">Amount{% if sort_base == 'amount' %} {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}</a></th>
         <th>Curr</th>
         <th>Category</th>
         <th class="col-budg"></th>
@@ -471,7 +476,7 @@
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const url = new URL(window.location.href);
-      url.searchParams.set('view_category', btn.dataset.category);
+      url.searchParams.set('category', btn.dataset.category);
       window.location.href = url.toString();
     });
   });
@@ -479,7 +484,7 @@
   // ── View-category dropdown ───────────────────────────────────────────────
   document.getElementById('view-category-select').addEventListener('change', function () {
     const url = new URL(window.location.href);
-    url.searchParams.set('view_category', this.value);
+    url.searchParams.set('category', this.value);
     window.location.href = url.toString();
   });
 
