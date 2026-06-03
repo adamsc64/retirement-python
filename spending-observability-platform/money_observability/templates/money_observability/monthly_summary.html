@@ -69,19 +69,21 @@
       gap: 6px;
       margin-bottom: 24px;
     }
-    .month-shortcuts button {
+    .month-btn {
       background: #181825;
       border: 1px solid #313244;
       border-radius: 4px;
       color: #585b70;
       cursor: pointer;
+      display: inline-block;
       font-family: inherit;
       font-size: 11px;
       padding: 4px 10px;
+      text-decoration: none;
       transition: background 0.1s, border-color 0.1s, color 0.1s;
     }
-    .month-shortcuts button:hover { background: #313244; border-color: #45475a; color: #cdd6f4; }
-    .month-shortcuts button.active { border-color: #89b4fa; color: #89b4fa; }
+    .month-btn:hover { background: #313244; border-color: #45475a; color: #cdd6f4; text-decoration: none; }
+    .month-btn.active { border-color: #89b4fa; color: #89b4fa; }
 
     /* Warning banner */
     .warning {
@@ -109,7 +111,7 @@
       font-size: 11px;
       font-weight: normal;
       letter-spacing: 0.08em;
-      padding: 6px 14px;
+      padding: 4px 14px;
       text-align: right;
       text-transform: uppercase;
     }
@@ -119,7 +121,7 @@
     tbody tr:hover { background: #24243a; }
 
     td {
-      padding: 8px 14px;
+      padding: 4px 14px;
       text-align: right;
       vertical-align: top;
     }
@@ -130,7 +132,7 @@
     a.cat-name { text-decoration: none; }
     a.cat-name:hover { text-decoration: underline; }
 
-    .currency-block { display: block; line-height: 1.7; }
+    .currency-block { display: block; line-height: 1.4; }
 
     .amount { color: #89b4fa; }
     .amount.zero { color: #313244; }
@@ -147,7 +149,7 @@
       border-top: 1px solid #45475a;
       color: #cba6f7;
       font-weight: bold;
-      padding: 10px 14px;
+      padding: 6px 14px;
       text-align: right;
     }
     tfoot td:first-child { text-align: left; }
@@ -180,7 +182,14 @@
     <h1>Monthly Summary</h1>
   </header>
 
-  <div class="month-shortcuts" id="month-shortcuts"></div>
+  <div class="month-shortcuts" id="month-shortcuts">
+    {% for m in available_months %}
+      <a href="?start={{ m.start }}&end={{ m.end }}" 
+         class="month-btn {% if start|date:'Y-m-d' == m.start %}active{% endif %}">
+        {{ m.label }}
+      </a>
+    {% endfor %}
+  </div>
 
   <form class="range-form" method="get" id="range-form">
     <label for="start">from</label>
@@ -192,61 +201,8 @@
 
   <script>
   (function () {
-    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const startInput = document.getElementById('start');
-    const endInput = document.getElementById('end');
-    const container = document.getElementById('month-shortcuts');
-
-    function pad(n) { return String(n).padStart(2, '0'); }
-
-    function lastDay(year, month1) {
-      // month1 is 1-based; Date(year, month, 0) gives last day of previous month.
-      return new Date(year, month1, 0).getDate();
-    }
-
-    // Returns {year, month} if inputs represent a full calendar month, else null.
-    function currentActiveYearMonth() {
-      const s = startInput.value;
-      const e = endInput.value;
-      if (!s || !e) return null;
-      const sy = parseInt(s.slice(0,4),10), sm = parseInt(s.slice(5,7),10), sd = parseInt(s.slice(8,10),10);
-      const ey = parseInt(e.slice(0,4),10), em = parseInt(e.slice(5,7),10), ed = parseInt(e.slice(8,10),10);
-      if (sy !== ey || sm !== em) return null;
-      if (sd !== 1) return null;
-      if (ed !== lastDay(sy, sm)) return null;
-      return { year: sy, month: sm };
-    }
-
-    function renderButtons() {
-      const active = currentActiveYearMonth();
-      container.innerHTML = '';
-      const today = new Date();
-      const curYear = today.getFullYear();
-      const curMonth = today.getMonth() + 1; // 1-based
-
-      // Show this month + 11 months back (12 total), oldest first.
-      for (let i = 11; i >= 0; i--) {
-        let m = curMonth - i;
-        let y = curYear;
-        if (m <= 0) { m += 12; y -= 1; }
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = MONTHS[m - 1] + ' ' + y;
-        if (active && active.year === y && active.month === m) btn.classList.add('active');
-        btn.addEventListener('click', (function (month, year) {
-          return function () {
-            startInput.value = year + '-' + pad(month) + '-01';
-            endInput.value   = year + '-' + pad(month) + '-' + pad(lastDay(year, month));
-            renderButtons();
-            document.getElementById('range-form').submit();
-          };
-        })(m, y));
-        container.appendChild(btn);
-      }
-    }
-
-    renderButtons();
+    // We no longer need the complex JS rendering here since the server 
+    // provides the correct months with data.
   })();
   </script>
 

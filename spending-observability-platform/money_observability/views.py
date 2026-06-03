@@ -8,6 +8,7 @@ from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -219,9 +220,49 @@ def exclude_transactions(request):
 
 @login_required(login_url="/admin/login/")
 def monthly_summary(request):
+    # 1. Discover all months that actually have non-excluded transaction data.
+    # We want unique year/month pairs, ordered newest first.
+    db_months = (
+        Transaction.objects.filter(excluded=False)
+        .annotate(month=TruncMonth("posted_date"))
+        .values_list("month", flat=True)
+        .distinct()
+        .order_by("-month")
+    )
+
+    # 2. Limit to most recent 12 months that have data.
+    # If the current month has no data yet, it will naturally be excluded.
+    available_months = []
+    for m_date in db_months[:12]:
+        available_months.append(
+            {
+                "label": m_date.strftime("%b %Y"),
+                "start": m_date.strftime("%Y-%m-%d"),
+                # Last day of month
+                "end": (
+                    m_date.replace(
+                        month=m_date.month % 12 + 1,
+                        day=1,
+                        year=m_date.year + (m_date.month // 12),
+                    )
+                    - timezone.timedelta(days=1)
+                ).strftime("%Y-%m-%d"),
+            }
+        )
+
+    # Reverse back to "oldest first" for the UI buttons if preferred,
+    # but the user said "starting from current month, counting back",
+    # so we'll keep the "newest first" order for the buttons.
+
+    # 3. Handle default range if none provided.
     today = date.today()
     default_start = today.replace(day=1)
-    default_end = today
+    if available_months and not request.GET.get("start"):
+        # Default to the most recent month with data
+        default_start = date.fromisoformat(available_months[0]["start"])
+        default_end = date.fromisoformat(available_months[0]["end"])
+    else:
+        default_end = today
 
     start_str = request.GET.get("start", default_start.isoformat())
     end_str = request.GET.get("end", default_end.isoformat())
@@ -336,6 +377,7 @@ def monthly_summary(request):
         {
             "start": start,
             "end": end,
+            "available_months": available_months,
             "rows": rows,
             "total_rows": total_rows,
             "unknown_budget_count": unknown_budget_count,
