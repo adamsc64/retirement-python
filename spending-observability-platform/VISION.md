@@ -45,7 +45,7 @@ The system surfaces what it cannot resolve automatically. A fast local web UI le
 Given raw CSV exports for a target month, produce an output that:
 
 1. Separates true spending from non-spend transfers. ✅
-2. Tags every transaction with a category and budget treatment. ⬜ (model in place; coverage and treatment assignment ongoing)
-3. Displays a category-level summary web view with baseline, planning, and cash figures. ⬜
+2. Tags every transaction with a category and budget treatment. ✅ (model, rules, and UI in place; coverage ongoing)
+3. Displays a category-level summary web view with baseline, planning, and cash figures. ✅
 
-The pipeline and categorization queue are in place. The remaining gap is the summary web view that computes the three views above.
+All three pipeline stages are in place. The ongoing work is improving categorization and budget-treatment coverage.

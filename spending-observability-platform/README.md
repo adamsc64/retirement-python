@@ -11,14 +11,14 @@ Local-first Django pipeline for importing, excluding, and categorizing transacti
 ## Current status
 
 - Citi, Amex, HSBC, and Wise loaders are implemented.
-- `import_transactions --apply` writes ingestion layers:
+- CSV files are imported via the web UI at `/upload/`, which writes ingestion layers:
   - `ImportBatch` (file-level audit)
   - `Transaction` (canonical analysis rows)
 - Duplicate imports are prevented by file hash; overlapping date-range rows are skipped with a warning.
 - Rule-based exclusions via `apply_exclusions`.
 - Rule-based categorization via `apply_categories`, with `Manual Review` fallback.
 - **Auto-login**: For development, all users are automatically logged in as a superuser (`admin/admin`).
-- Web UI at `/` for stats and `/categorize/` for keyboard-driven batch categorization.
+- Web UI routes: `/` (stats), `/upload/` (import CSVs), `/categorize/` (keyboard-driven categorization queue), `/summary/` (monthly spending summary).
 
 ## Setup
 
@@ -60,17 +60,7 @@ Examples:
 
 ### Import
 
-Dry run (default):
-
-```bash
-python manage.py import_transactions data/raw
-```
-
-Persist rows:
-
-```bash
-python manage.py import_transactions data/raw --apply
-```
+Upload CSV files via the web UI at `/upload/`. Exclusions and categories are applied automatically after each upload.
 
 ### Apply exclusions
 

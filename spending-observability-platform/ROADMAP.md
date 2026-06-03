@@ -12,12 +12,12 @@
 - ✅ Web UI: index page with categorization stats and progress
 - ✅ Web UI: keyboard-driven categorization queue (`/categorize/`)
 - ✅ Django admin with inline category editing
+- ✅ Web UI: monthly spending summary at `/summary/` (baseline, planning, and cash views)
 
 ## Near-term priorities
 
-1. **Monthly spending summary** — category-level totals for a given date range, delivered as a web view (the last missing v1 output).
-2. **Improve categorization coverage** — continue working through the Manual Review queue to get rule-based coverage as high as possible before relying on the web UI for edge cases.
-3. **Exclusion quality** — review and tighten exclusion rules as new sources are added.
+1. **Improve categorization coverage** — continue working through the Manual Review queue to get rule-based coverage as high as possible before relying on the web UI for edge cases.
+2. **Exclusion quality** — review and tighten exclusion rules as new sources are added.
 
 ## Target reports
 
@@ -26,7 +26,7 @@ See [VISION.md](VISION.md) for the authoritative list. The immediate next step i
 - ✅ Imported flow totals
 - ✅ Excluded totals and counts by reason
 - ✅ Manual review queue for unresolved rows
-- ⬜ **Category-level monthly summary web view** (next priority)
+- ✅ Category-level monthly summary web view (`/summary/`)
 
 ## Category model
 
