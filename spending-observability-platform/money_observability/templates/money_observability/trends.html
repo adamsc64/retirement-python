@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spending Trends</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+      font-size: 13px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      min-height: 100dvh;
+      padding: 40px 32px;
+    }
+
+    a { color: #89b4fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    header h1 { font-size: 18px; color: #cba6f7; letter-spacing: 0.06em; }
+    header .home-link { color: #45475a; font-size: 18px; line-height: 1; text-decoration: none; flex-shrink: 0; }
+    header .home-link:hover { color: #cdd6f4; }
+
+    .subtitle {
+      color: #45475a;
+      font-size: 11px;
+      margin-bottom: 24px;
+    }
+
+    .empty {
+      color: #585b70;
+      font-size: 13px;
+      margin-top: 48px;
+    }
+
+    /* Table wrapper — horizontal scroll on narrow viewports */
+    .trends-wrap { overflow-x: auto; }
+
+    table {
+      border-collapse: collapse;
+      white-space: nowrap;
+    }
+
+    thead th {
+      border-bottom: 1px solid #45475a;
+      color: #585b70;
+      font-size: 11px;
+      font-weight: normal;
+      letter-spacing: 0.06em;
+      padding: 4px 16px;
+      text-align: right;
+      text-transform: uppercase;
+    }
+    thead th:first-child {
+      position: sticky;
+      left: 0;
+      background: #1e1e2e;
+      text-align: left;
+      padding-right: 24px;
+      z-index: 1;
+    }
+
+    tbody tr { border-bottom: 1px solid #181825; }
+    tbody tr:hover { background: #24243a; }
+    tbody tr:hover td:first-child { background: #24243a; }
+
+    td {
+      padding: 5px 16px;
+      text-align: right;
+      vertical-align: middle;
+    }
+    td:first-child {
+      color: #cdd6f4;
+      position: sticky;
+      left: 0;
+      background: #1e1e2e;
+      text-align: left;
+      padding-right: 24px;
+      z-index: 1;
+    }
+    td:first-child.manual-review { color: #f38ba8; }
+
+    .cell-amount { color: #89b4fa; text-decoration: none; }
+    .cell-amount:hover { text-decoration: underline; }
+    .cell-amount.zero { color: #313244; pointer-events: none; }
+
+    /* Delta indicators */
+    .delta {
+      display: inline-block;
+      font-size: 10px;
+      margin-left: 4px;
+    }
+    .delta.up   { color: #f38ba8; } /* red — spending rose */
+    .delta.down { color: #a6e3a1; } /* green — spending fell */
+    .delta.same { color: #45475a; } /* dim — roughly stable */
+    .delta.new  { color: #fab387; } /* orange — newly appeared */
+    .delta.gone { color: #585b70; } /* dim — dropped to zero */
+
+    tfoot td {
+      border-top: 1px solid #45475a;
+      color: #cba6f7;
+      font-weight: bold;
+      padding: 6px 16px;
+      text-align: right;
+    }
+    tfoot td:first-child {
+      position: sticky;
+      left: 0;
+      background: #1e1e2e;
+      text-align: left;
+      padding-right: 24px;
+    }
+
+    .legend {
+      color: #45475a;
+      font-size: 11px;
+      line-height: 2;
+      margin-top: 24px;
+    }
+    .legend .up   { color: #f38ba8; }
+    .legend .down { color: #a6e3a1; }
+    .legend .same { color: #45475a; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a class="home-link" href="/" title="Home">⌂</a>
+    <h1>Spending Trends</h1>
+  </header>
+
+  <p class="subtitle">
+    Ordinary baseline spend by category · USD · most recent {% if months %}{{ months|length }} month{{ months|length|pluralize }}{% endif %}
+    &nbsp;·&nbsp; <a href="{% url 'monthly_summary' %}">monthly summary →</a>
+  </p>
+
+  {% if not rows %}
+    <p class="empty">No ordinary-tagged transactions yet. Set budget treatments on transactions to populate this view.</p>
+  {% else %}
+  <div class="trends-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          {% for m in months %}
+            <th>{{ m.label }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td class="{% if row.category == 'Manual Review' %}manual-review{% endif %}">{{ row.category }}</td>
+            {% for cell in row.cells %}
+              <td>
+                <a class="cell-amount {% if cell.amt == 0 %}zero{% endif %}"
+                   href="{% url 'categorize_queue' %}?category={{ row.category }}&start={{ cell.start }}&end={{ cell.end }}">
+                  ${{ cell.amt }}
+                </a>
+                {% if cell.delta == 'up' %}
+                  <span class="delta up" title="Higher than prior month">▲</span>
+                {% elif cell.delta == 'down' %}
+                  <span class="delta down" title="Lower than prior month">▼</span>
+                {% elif cell.delta == 'same' %}
+                  <span class="delta same" title="Within 5% of prior month">≈</span>
+                {% elif cell.delta == 'new' %}
+                  <span class="delta new" title="First spend in this category">new</span>
+                {% elif cell.delta == 'gone' %}
+                  <span class="delta gone" title="No spend this month">—</span>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          {% for cell in total_cells %}
+            <td>${{ cell.amt }}</td>
+          {% endfor %}
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="legend">
+    <span class="up">▲</span> higher than prior month &nbsp;&nbsp;
+    <span class="down">▼</span> lower than prior month &nbsp;&nbsp;
+    <span class="same">≈</span> within 5% of prior month &nbsp;&nbsp;
+    <span class="new">new</span> first spend in this category
+  </div>
+  {% endif %}
+
+</body>
+</html>

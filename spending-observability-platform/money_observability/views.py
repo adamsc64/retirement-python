@@ -445,6 +445,107 @@ def upload_csv(request):
     return render(request, "money_observability/upload.html")
 
 
+@login_required(login_url="/admin/login/")
+def spending_trends(request):
+    """Category × month baseline burn table (ordinary spend only, USD)."""
+    qs = (
+        Transaction.objects.filter(
+            excluded=False,
+            direction="debit",
+            budget_treatment=BudgetTreatment.ORDINARY,
+        )
+        .annotate(month=TruncMonth("posted_date"))
+        .values("category", "month", "currency", "amount")
+    )
+
+    # Build grid: category -> month_label -> USD total
+    month_dates: dict[str, date] = {}  # label -> date for sorting
+    grid: dict[str, dict[str, Decimal]] = defaultdict(lambda: defaultdict(Decimal))
+    for tx in qs:
+        m = tx["month"]  # date (DateField + TruncMonth)
+        label = m.strftime("%b %Y")
+        month_dates[label] = m
+        cat = tx["category"] or CATEGORY_MANUAL_REVIEW
+        fx = FX_TO_USD.get(tx["currency"], Decimal("1.00"))
+        grid[cat][label] += abs(tx["amount"]) * fx
+
+    # Chronological order, most recent 12 months
+    month_labels = sorted(month_dates, key=lambda lbl: month_dates[lbl])[-12:]
+
+    # Build month metadata with date ranges for link generation
+    def _month_end(d: date) -> date:
+        from datetime import timedelta
+
+        if d.month == 12:
+            return d.replace(year=d.year + 1, month=1, day=1) - timedelta(days=1)
+        return d.replace(month=d.month + 1, day=1) - timedelta(days=1)
+
+    months = [
+        {
+            "label": lbl,
+            "start": month_dates[lbl].isoformat(),
+            "end": _month_end(month_dates[lbl]).isoformat(),
+        }
+        for lbl in month_labels
+    ]
+
+    # Canonical category order — only categories that have any spend
+    ordered_cats = [c for c in CATEGORY_NAMES if c in grid]
+    if CATEGORY_MANUAL_REVIEW in grid:
+        ordered_cats.append(CATEGORY_MANUAL_REVIEW)
+
+    totals: dict[str, Decimal] = defaultdict(Decimal)
+    rows = []
+    for cat in ordered_cats:
+        cells = []
+        prior_had_spend = False
+        for i, label in enumerate(month_labels):
+            amt = grid[cat].get(label, Decimal(0)).quantize(Decimal("0.01"))
+            totals[label] += amt
+            if i == 0 or amt == grid[cat].get(month_labels[i - 1], Decimal(0)).quantize(
+                Decimal("0.01")
+            ):
+                delta = None
+            else:
+                prev = grid[cat].get(month_labels[i - 1], Decimal(0))
+                if prev == 0 and amt > 0:
+                    delta = "new" if not prior_had_spend else "up"
+                elif amt == 0:
+                    delta = "gone"
+                elif amt > prev * Decimal("1.05"):
+                    delta = "up"
+                elif amt < prev * Decimal("0.95"):
+                    delta = "down"
+                else:
+                    delta = "same"
+            if amt > 0:
+                prior_had_spend = True
+            cells.append(
+                {
+                    "amt": amt,
+                    "delta": delta,
+                    "start": months[i]["start"],
+                    "end": months[i]["end"],
+                }
+            )
+        rows.append({"category": cat, "cells": cells})
+
+    total_cells = [
+        {"amt": totals[lbl].quantize(Decimal("0.01")), "delta": None}
+        for lbl in month_labels
+    ]
+
+    return render(
+        request,
+        "money_observability/trends.html",
+        {
+            "months": months,
+            "rows": rows,
+            "total_cells": total_cells,
+        },
+    )
+
+
 def run_post_import_pipeline(
     rules_path: Path | None = None,
 ) -> dict[str, int]:

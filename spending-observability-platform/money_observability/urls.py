@@ -11,5 +11,6 @@ urlpatterns = [
         "categorize/exclude/", views.exclude_transactions, name="exclude_transactions"
     ),
     path("summary/", views.monthly_summary, name="monthly_summary"),
+    path("trends/", views.spending_trends, name="spending_trends"),
     path("upload/", views.upload_csv, name="upload_csv"),
 ]
