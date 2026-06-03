@@ -58,7 +58,7 @@
     }
     .progress-label { color: #585b70; font-size: 11px; text-align: center; margin-top: 4px; }
 
-    nav { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+    nav { display: flex; flex-direction: row; gap: 10px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
 
     a.nav-link {
       display: block;
@@ -69,7 +69,7 @@
       color: #cdd6f4;
       text-decoration: none;
       text-align: center;
-      min-width: 240px;
+      min-width: 160px;
       transition: background 0.1s, border-color 0.1s;
     }
     a.nav-link:hover { background: #45475a; border-color: #585b70; }
@@ -113,20 +113,20 @@
 
   <nav>
     <a class="nav-link" href="/summary/">
-      Monthly Summary
+      📊 Monthly Summary
       <span class="sub">cash · baseline · planning burn</span>
     </a>
     <a class="nav-link" href="/categorize/">
-      Categorization Queue
+      🗂 Browse Transactions
       {% if uncategorized %}<span class="badge">{{ uncategorized }}</span>{% endif %}
       <span class="sub">j/k · space · 1-0</span>
     </a>
     <a class="nav-link" href="/upload/">
-      Upload CSV
+      📥 Upload CSV
       <span class="sub">add raw statement files</span>
     </a>
     <a class="nav-link" href="/admin/">
-      Django Admin
+      ⚙️ Django Admin
       <span class="sub">full data access</span>
     </a>
   </nav>

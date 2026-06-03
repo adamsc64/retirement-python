@@ -313,8 +313,9 @@ def monthly_summary(request):
             cell["planning"] += amt / 12
         # ONE_OFF and UNKNOWN do not contribute to baseline or planning
 
-    # Determine canonical category order: CATEGORY_NAMES first, then Manual Review, then anything else.
-    ordered_cats = [c for c in CATEGORY_NAMES if c in raw_data]
+    # Determine canonical category order: all CATEGORY_NAMES first (even if zero
+    # spend), then Manual Review if present, then any unexpected categories.
+    ordered_cats = list(CATEGORY_NAMES)
     if CATEGORY_MANUAL_REVIEW in raw_data:
         ordered_cats.append(CATEGORY_MANUAL_REVIEW)
     for cat in sorted(raw_data):
@@ -334,8 +335,17 @@ def monthly_summary(request):
 
     for cat in ordered_cats:
         currency_entries = []
-        for cur in sorted(raw_data[cat]):
-            cell = raw_data[cat][cur]
+        for cur in sorted(raw_data[cat]) if cat in raw_data else ["USD"]:
+            cell = (
+                raw_data[cat][cur]
+                if cat in raw_data
+                else {
+                    "cash": Decimal(0),
+                    "baseline": Decimal(0),
+                    "planning": Decimal(0),
+                    "count": 0,
+                }
+            )
             currency_entries.append(
                 {
                     "currency": cur,
