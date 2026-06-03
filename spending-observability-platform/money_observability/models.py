@@ -151,7 +151,7 @@ class Transaction(models.Model):
     budget_treatment = models.CharField(
         max_length=20,
         choices=BudgetTreatment.choices,
-        default=BudgetTreatment.UNKNOWN,
+        default=BudgetTreatment.ORDINARY,
         db_index=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
