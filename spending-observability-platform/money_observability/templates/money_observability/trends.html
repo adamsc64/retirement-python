@@ -92,6 +92,22 @@
     .cell-amount:hover { text-decoration: underline; }
     .cell-amount.zero { color: #313244; pointer-events: none; }
 
+    /* Annual estimate column */
+    .annual-sep { border-left: 1px solid #45475a; }
+    .annual-amt { color: #cba6f7; text-decoration: none; }
+    .annual-amt:hover { text-decoration: underline; }
+    thead th.annual-sep { border-left: 1px solid #45475a; color: #cba6f7; }
+    tfoot td.annual-sep { border-left: 1px solid #45475a; color: #cba6f7; }
+    .col-hint {
+      display: block;
+      color: #45475a;
+      font-size: 10px;
+      font-weight: normal;
+      letter-spacing: 0;
+      text-transform: none;
+      margin-top: 2px;
+    }
+
     /* Delta indicators */
     .delta {
       display: inline-block;
@@ -153,6 +169,10 @@
           {% for m in months %}
             <th>{{ m.label }}</th>
           {% endfor %}
+          <th class="annual-sep">
+            Annual est.
+            <span class="col-hint">avg × 12 · USD</span>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -178,6 +198,7 @@
                 {% endif %}
               </td>
             {% endfor %}
+            <td class="annual-sep"><a class="annual-amt" href="{% url 'categorize_queue' %}?category={{ row.category }}">${{ row.annual_est }}</a></td>
           </tr>
         {% endfor %}
       </tbody>
@@ -187,6 +208,7 @@
           {% for cell in total_cells %}
             <td>${{ cell.amt }}</td>
           {% endfor %}
+          <td class="annual-sep">${{ total_annual_est }}</td>
         </tr>
       </tfoot>
     </table>

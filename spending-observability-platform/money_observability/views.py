@@ -528,8 +528,20 @@ def spending_trends(request):
                     "end": months[i]["end"],
                 }
             )
-        rows.append({"category": cat, "cells": cells})
+        annual_est = (
+            (sum(c["amt"] for c in cells) / len(months) * 12).quantize(Decimal("0.01"))
+            if months
+            else Decimal(0)
+        )
+        rows.append({"category": cat, "cells": cells, "annual_est": annual_est})
 
+    total_annual_est = (
+        (sum(totals[lbl] for lbl in month_labels) / len(months) * 12).quantize(
+            Decimal("0.01")
+        )
+        if months
+        else Decimal(0)
+    )
     total_cells = [
         {"amt": totals[lbl].quantize(Decimal("0.01")), "delta": None}
         for lbl in month_labels
@@ -542,6 +554,7 @@ def spending_trends(request):
             "months": months,
             "rows": rows,
             "total_cells": total_cells,
+            "total_annual_est": total_annual_est,
         },
     )
 
