@@ -256,7 +256,7 @@
 </div>
 
 <div id="status-bar">
-  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign &nbsp;·&nbsp; -&nbsp;unassign &nbsp;·&nbsp; d&nbsp;exclude &nbsp;·&nbsp; ⇧A&nbsp;annual &nbsp;·&nbsp; ⇧O&nbsp;ordinary &nbsp;·&nbsp; ⇧I&nbsp;irregular &nbsp;·&nbsp; ⇧X&nbsp;one-off</span>
+  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign &nbsp;·&nbsp; y&nbsp;unassign &nbsp;·&nbsp; d&nbsp;exclude &nbsp;·&nbsp; ⇧A&nbsp;annual &nbsp;·&nbsp; ⇧O&nbsp;ordinary &nbsp;·&nbsp; ⇧I&nbsp;irregular &nbsp;·&nbsp; ⇧X&nbsp;one-off</span>
   <span id="sel-count"></span>
 </div>
 
@@ -476,7 +476,7 @@
     if (e.key === ' ' || e.key === 'x') { toggleSelect(cursor); return; }
     if (e.key === 'a') { e.preventDefault(); selectAll(); return; }
     if (e.key === 'Escape') { e.preventDefault(); clearSelection(); return; }
-    if (e.key === '-') { e.preventDefault(); await assign('Manual Review'); return; }
+    if (e.key === 'y') { e.preventDefault(); await assign('Manual Review'); return; }
     if (e.key === 'd') { e.preventDefault(); await exclude(); return; }
 
     if (e.shiftKey) {
