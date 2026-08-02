@@ -41,7 +41,7 @@ CATEGORIES: list[Category] = [
     Category(
         "Housing",
         "h",
-        "rent, utilities, home services, repairs, laundry and dry-cleaning",
+        "rent, utility bills, home services, repairs, laundry and dry-cleaning",
     ),
     Category("Subscriptions", "s", "recurring software, streaming, club memberships"),
     Category("Shopping", "p", "retail, clothing, online shopping, general merchandise"),
