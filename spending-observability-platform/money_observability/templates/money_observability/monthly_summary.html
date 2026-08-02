@@ -232,21 +232,21 @@
             <td>
               {% for e in row.entries %}
                 <span class="currency-block">
-                  <span class="amount {% if e.cash == 0 %}zero{% endif %}">{{ e.cash }}</span>
+                  <a class="amount {% if e.cash == 0 %}zero{% endif %}" href="/categorize/?category={{ row.category|urlencode }}&start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">{{ e.cash }}</a>
                 </span>
               {% endfor %}
             </td>
             <td>
               {% for e in row.entries %}
                 <span class="currency-block">
-                  <span class="amount {% if e.baseline == 0 %}zero{% endif %}">{{ e.baseline }}</span>
+                  <a class="amount {% if e.baseline == 0 %}zero{% endif %}" href="/categorize/?category={{ row.category|urlencode }}&start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">{{ e.baseline }}</a>
                 </span>
               {% endfor %}
             </td>
             <td>
               {% for e in row.entries %}
                 <span class="currency-block">
-                  <span class="amount {% if e.planning == 0 %}zero{% endif %}">{{ e.planning }}</span>
+                  <a class="amount {% if e.planning == 0 %}zero{% endif %}" href="/categorize/?category={{ row.category|urlencode }}&start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">{{ e.planning }}</a>
                 </span>
               {% endfor %}
             </td>
@@ -259,7 +259,7 @@
             </td>
             <td>
               {% for e in row.entries %}
-                <span class="currency-block count">{{ e.count }}</span>
+                <span class="currency-block count"><a href="/categorize/?category={{ row.category|urlencode }}&start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">{{ e.count }}</a></span>
               {% endfor %}
             </td>
           </tr>
