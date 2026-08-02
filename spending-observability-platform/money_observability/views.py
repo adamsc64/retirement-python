@@ -469,8 +469,8 @@ def spending_trends(request):
         fx = FX_TO_USD.get(tx["currency"], Decimal("1.00"))
         grid[cat][label] += abs(tx["amount"]) * fx
 
-    # Chronological order, most recent 12 months
-    month_labels = sorted(month_dates, key=lambda lbl: month_dates[lbl])[-12:]
+    # Chronological order, most recent 12 complete months (drop current/last month)
+    month_labels = sorted(month_dates, key=lambda lbl: month_dates[lbl])[:-1][-12:]
 
     # Build month metadata with date ranges for link generation
     def _month_end(d: date) -> date:
