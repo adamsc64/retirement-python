@@ -155,15 +155,7 @@
     tfoot td:first-child { text-align: left; }
 
     /* Column header hints */
-    .col-hint {
-      display: block;
-      color: #45475a;
-      font-size: 10px;
-      font-weight: normal;
-      letter-spacing: 0;
-      text-transform: none;
-      margin-top: 2px;
-    }
+    thead th[title] { cursor: help; }
 
     /* Legend */
     .legend {
@@ -221,18 +213,10 @@
       <thead>
         <tr>
           <th>Category</th>
-          <th>
-            Cash Outflow
-            <span class="col-hint">every debit · USD</span>
-          </th>
-          <th>
-            Baseline Burn
-            <span class="col-hint">ordinary only · USD</span>
-          </th>
-          <th>
-            Planning Burn
-            <span class="col-hint">ordinary + annual÷12 + irregular÷12 · USD</span>
-          </th>
+          <th title="every debit · USD">Cash Outflow (USD)</th>
+          <th title="ordinary only · USD">Baseline Burn (USD)</th>
+          <th title="ordinary + annual÷12 + irregular÷12 · USD">Planning Burn (USD)</th>
+          <th title="cash × 365 / days · USD">Annualized (USD)</th>
           <th>Txns</th>
         </tr>
       </thead>
@@ -268,6 +252,13 @@
             </td>
             <td>
               {% for e in row.entries %}
+                <span class="currency-block">
+                  <span class="amount {% if e.annualized == 0 %}zero{% endif %}">{{ e.annualized }}</span>
+                </span>
+              {% endfor %}
+            </td>
+            <td>
+              {% for e in row.entries %}
                 <span class="currency-block count">{{ e.count }}</span>
               {% endfor %}
             </td>
@@ -290,6 +281,11 @@
           <td>
             {% for t in total_rows %}
               <span class="currency-block">{{ t.planning }}</span>
+            {% endfor %}
+          </td>
+          <td>
+            {% for t in total_rows %}
+              <span class="currency-block">{{ t.annualized }}</span>
             {% endfor %}
           </td>
           <td>

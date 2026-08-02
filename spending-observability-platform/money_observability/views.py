@@ -323,6 +323,9 @@ def monthly_summary(request):
             ordered_cats.append(cat)
 
     # Build rows for template.
+    days_in_range = (end - start).days + 1
+    annualize = Decimal(365) / Decimal(days_in_range)
+
     rows = []
     totals: dict[str, dict] = defaultdict(
         lambda: {
@@ -352,6 +355,7 @@ def monthly_summary(request):
                     "cash": cell["cash"].quantize(Decimal("0.01")),
                     "baseline": cell["baseline"].quantize(Decimal("0.01")),
                     "planning": cell["planning"].quantize(Decimal("0.01")),
+                    "annualized": (cell["cash"] * annualize).quantize(Decimal("0.01")),
                     "count": cell["count"],
                 }
             )
@@ -367,6 +371,7 @@ def monthly_summary(request):
             "cash": totals[cur]["cash"].quantize(Decimal("0.01")),
             "baseline": totals[cur]["baseline"].quantize(Decimal("0.01")),
             "planning": totals[cur]["planning"].quantize(Decimal("0.01")),
+            "annualized": (totals[cur]["cash"] * annualize).quantize(Decimal("0.01")),
             "count": totals[cur]["count"],
         }
         for cur in sorted(totals)
