@@ -182,7 +182,7 @@
             {% for cell in row.cells %}
               <td>
                 <a class="cell-amount {% if cell.amt == 0 %}zero{% endif %}"
-                   href="{% url 'categorize_queue' %}?category={{ row.category }}&start={{ cell.start }}&end={{ cell.end }}">
+                   href="{% url 'categorize_queue' %}?category={{ row.category|urlencode }}&start={{ cell.start }}&end={{ cell.end }}">
                   ${{ cell.amt }}
                 </a>
                 {% if cell.delta == 'up' %}
@@ -198,7 +198,7 @@
                 {% endif %}
               </td>
             {% endfor %}
-            <td class="annual-sep"><a class="annual-amt" href="{% url 'categorize_queue' %}?category={{ row.category }}">${{ row.annual_est }}</a></td>
+            <td class="annual-sep"><a class="annual-amt" href="{% url 'categorize_queue' %}?category={{ row.category|urlencode }}">${{ row.annual_est }}</a></td>
           </tr>
         {% endfor %}
       </tbody>
