@@ -127,13 +127,6 @@ categories:
         - taxi
         - national rail
         - trainline
-        - eurostar
-        - ryanair
-        - easyjet
-        - british airways
-        - delta
-        - united airlines
-        - american airlines
         - southwest
         - spirit airlines
         - parking
@@ -184,6 +177,7 @@ categories:
         - fancy hands
         - three payg recurri
         - "paramount+"
+        - Amazon web services
 
   - id: shopping
     category: Shopping
@@ -268,21 +262,25 @@ categories:
         - marriott
         - expedia
         - trivago
+        - eurostar
+        - ryanair
+        - easyjet
+        - british airways
+        - delta
+        - united airlines
+        - american airlines
         - holiday inn
         - premier inn
+        - Oxford and Cambridge C
 
   - id: utilities
-    category: Utilities
+    category: Housing
     match:
       description_contains:
         - octopus energy
         - british gas
         - eon energy
         - thames water
-        - severn trent
-        - scottish power
-        - npower
-        - edf energy
         - oxford city counci
         - virgin media
         - prospect union
@@ -309,7 +307,6 @@ categories:
         - midaticket
         - ticketmaster
         - eventbrite
-        - Oxford and Cambridge C
         - Yale Club
         - Harvard Club
         - Penn Club
