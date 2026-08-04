@@ -401,8 +401,6 @@ def parse_spending_input(
             if last_spend is None:
                 return None
             return last_spend * (1.0 + (percentage / 100.0))
-        if percentage < 0:
-            return None
         return current_net_worth * (percentage / 100.0)
 
     try:
@@ -413,8 +411,6 @@ def parse_spending_input(
         if last_spend is None:
             return None
         return last_spend + amount
-    if amount < 0:
-        return None
     return amount
 
 
@@ -532,11 +528,14 @@ def main(argv: list[str] | None = None) -> None:
                     )
                 continue
 
-            if spend < 0:
-                print("Spending cannot be negative.")
-                continue
-
-        print(f"You will spend {style(format_money(spend), BOLD, YELLOW)} this year.")
+        if spend < 0:
+            print(
+                f"You will save {style(format_money(-spend), BOLD, GREEN)} this year (net income)."
+            )
+        else:
+            print(
+                f"You will spend {style(format_money(spend), BOLD, YELLOW)} this year."
+            )
         print(style("-" * 72, DIM))
         print(style("Applying this year's market results...", BOLD, MAGENTA))
         spend_pct = spend / start_portfolio if start_portfolio > 0 else 0.0
