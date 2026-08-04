@@ -479,9 +479,6 @@ def main(argv: list[str] | None = None) -> None:
         print(
             "You can enter a dollar amount, a percent of net worth like 6%, a change from last year like +10% / -10%, or press Enter."
         )
-        print(
-            "Pressing Enter uses 5% in year 1, and reuses last year's spending after that."
-        )
         print("Type 'q', 'quit', or 'end' when you want to end the game.")
 
     year_index = start_index
@@ -505,6 +502,10 @@ def main(argv: list[str] | None = None) -> None:
         if args.strategy == "guardrails":
             spend = gk_spend(net_worth, last_spend)
         else:
+            if last_spend is None:
+                print("  (Press Enter for 5% of net worth.)")
+            else:
+                print(f"  (Press Enter to repeat {format_money(last_spend)}.)")
             spend_raw = (
                 input("What would you like to spend this year? ").strip().lower()
             )
