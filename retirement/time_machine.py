@@ -115,6 +115,7 @@ MIN_YEARS_REMAINING = 1
 DEFAULT_STOCK_WEIGHT = 0.75
 DEFAULT_FIRST_YEAR_SPEND_RATE = 0.05
 MAX_GAME_YEARS = 40
+
 GAME_TITLE = "Retirement Time Machine"
 ASCII_ART = r"""
   ____      _   _                                _     _______ _                 __  __            _     _
@@ -268,7 +269,28 @@ def build_parser() -> argparse.ArgumentParser:
             "Defaults to all available years from the selected start year."
         ),
     )
+    parser.add_argument(
+        "--strategy",
+        choices=["guardrails"],
+        default=None,
+        help="Strategy mode. 'guardrails' runs Guyton-Klinger guardrail rules automatically.",
+    )
     return parser
+
+
+def gk_spend(net_worth: float, last_spend: float | None) -> float:
+    rules = [
+        {"threshold": 0.04, "condition": "__lt__", "adjustment": +0.10},
+        {"threshold": 0.06, "condition": "__gt__", "adjustment": -0.10},
+    ]
+    if last_spend is None:
+        return net_worth * DEFAULT_FIRST_YEAR_SPEND_RATE
+    rate = last_spend / net_worth if net_worth > 0 else 0.0
+    spend = last_spend
+    for rule in rules:
+        if getattr(rate, rule["condition"])(rule["threshold"]):
+            spend *= 1.0 + rule["adjustment"]
+    return spend
 
 
 def calculate_real_return(
@@ -454,14 +476,17 @@ def main(argv: list[str] | None = None) -> None:
     print(
         f"Using allocation: {style(f'{stock_weight:.0%} stocks / {bond_weight:.0%} bonds', BOLD, YELLOW)}"
     )
-    print("Each year, enter how much you want to spend.")
-    print(
-        "You can enter a dollar amount, a percent of net worth like 6%, a change from last year like +10% / -10%, or press Enter."
-    )
-    print(
-        "Pressing Enter uses 5% in year 1, and reuses last year's spending after that."
-    )
-    print("Type 'q', 'quit', or 'end' when you want to end the game.")
+    if args.strategy == "guardrails":
+        print("Running Guyton-Klinger guardrail strategy automatically.")
+    else:
+        print("Each year, enter how much you want to spend.")
+        print(
+            "You can enter a dollar amount, a percent of net worth like 6%, a change from last year like +10% / -10%, or press Enter."
+        )
+        print(
+            "Pressing Enter uses 5% in year 1, and reuses last year's spending after that."
+        )
+        print("Type 'q', 'quit', or 'end' when you want to end the game.")
 
     year_index = start_index
     last_spend: float | None = None
@@ -481,30 +506,35 @@ def main(argv: list[str] | None = None) -> None:
                 f"That's {style(f'{spending_rate:.2f}%', BOLD)} of your current net worth."
             )
 
-        spend_raw = input("What would you like to spend this year? ").strip().lower()
-        if spend_raw in {"q", "quit", "exit", "end"}:
-            print(
-                f"Game ended after year {year_number - 1} with {style(format_money(net_worth), BOLD)} remaining."
+        if args.strategy == "guardrails":
+            spend = gk_spend(net_worth, last_spend)
+        else:
+            spend_raw = (
+                input("What would you like to spend this year? ").strip().lower()
             )
-            print_summary_table(history)
-            print_notable_stats(history)
-            return
-
-        spend = parse_spending_input(spend_raw, net_worth, last_spend)
-        if spend is None:
-            if last_spend is None:
+            if spend_raw in {"q", "quit", "exit", "end"}:
                 print(
-                    "Please enter a dollar amount like 60000, a percentage like 6%, press Enter for 5%, or 'q' to quit."
+                    f"Game ended after year {year_number - 1} with {style(format_money(net_worth), BOLD)} remaining."
                 )
-            else:
-                print(
-                    "Please enter a dollar amount, a percentage like 6%, a change like +10% or -10%, press Enter to reuse last year's spending, or 'q' to quit."
-                )
-            continue
+                print_summary_table(history)
+                print_notable_stats(history)
+                return
 
-        if spend < 0:
-            print("Spending cannot be negative.")
-            continue
+            spend = parse_spending_input(spend_raw, net_worth, last_spend)
+            if spend is None:
+                if last_spend is None:
+                    print(
+                        "Please enter a dollar amount like 60000, a percentage like 6%, press Enter for 5%, or 'q' to quit."
+                    )
+                else:
+                    print(
+                        "Please enter a dollar amount, a percentage like 6%, a change like +10% or -10%, press Enter to reuse last year's spending, or 'q' to quit."
+                    )
+                continue
+
+            if spend < 0:
+                print("Spending cannot be negative.")
+                continue
 
         print(f"You will spend {style(format_money(spend), BOLD, YELLOW)} this year.")
         print(style("-" * 72, DIM))
