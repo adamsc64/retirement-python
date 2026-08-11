@@ -14,7 +14,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from .models import BUDGET_TREATMENT_HINTS, BudgetTreatment, Transaction
+from .models import Transaction
 from .services.ai_categorize import make_ai_categorizations
 from .services.categories import (
     CATEGORIES,
@@ -106,7 +106,6 @@ def categorize_queue(request):
             "currency",
             "source_institution",
             "category",
-            "budget_treatment",
         )
     )
     for tx in raw:
@@ -131,7 +130,6 @@ def categorize_queue(request):
             "sort_dir": sort_dir,
             "start": start,
             "end": end,
-            "budget_hints": BUDGET_TREATMENT_HINTS,
         },
     )
 
@@ -168,33 +166,6 @@ def assign_category(request):
 
 @login_required(login_url="/admin/login/")
 @require_http_methods(["POST"])
-def assign_budget(request):
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "invalid JSON"}, status=400)
-
-    ids = data.get("ids", [])
-    budget_treatment = data.get("budget_treatment", "")
-
-    if not ids or not isinstance(ids, list):
-        return JsonResponse({"error": "ids required"}, status=400)
-    valid_treatments = {bt.value for bt in BudgetTreatment}
-    if budget_treatment not in valid_treatments:
-        return JsonResponse({"error": "invalid budget_treatment"}, status=400)
-    try:
-        ids = [int(i) for i in ids]
-    except (TypeError, ValueError):
-        return JsonResponse({"error": "invalid ids"}, status=400)
-
-    updated = Transaction.objects.filter(id__in=ids).update(
-        budget_treatment=budget_treatment,
-    )
-    return JsonResponse({"updated": updated})
-
-
-@login_required(login_url="/admin/login/")
-@require_http_methods(["POST"])
 def exclude_transactions(request):
     try:
         data = json.loads(request.body)
@@ -216,6 +187,59 @@ def exclude_transactions(request):
         excluded_at=timezone.now(),
     )
     return JsonResponse({"excluded": excluded})
+
+
+@login_required(login_url="/admin/login/")
+def annual_expenses(request):
+    txs = (
+        Transaction.objects.filter(
+            excluded=False,
+            direction="debit",
+            category="Annual",
+        )
+        .values(
+            "id",
+            "posted_date",
+            "description_clean",
+            "description_raw",
+            "amount",
+            "currency",
+        )
+        .order_by("-amount")
+    )
+
+    rows = []
+    total_annual_usd = Decimal(0)
+    for tx in txs:
+        native_amt = abs(tx["amount"])
+        fx = FX_TO_USD.get(tx["currency"], Decimal("1.00"))
+        usd = (native_amt * fx).quantize(Decimal("0.01"))
+        monthly = (usd / 12).quantize(Decimal("0.01"))
+        total_annual_usd += usd
+        rows.append(
+            {
+                "id": tx["id"],
+                "date": tx["posted_date"],
+                "desc": tx["description_clean"] or tx["description_raw"],
+                "native_amount": native_amt.quantize(Decimal("0.01")),
+                "currency": tx["currency"],
+                "usd": usd,
+                "monthly": monthly,
+            }
+        )
+
+    total_monthly_usd = (total_annual_usd / 12).quantize(Decimal("0.01"))
+    total_annual_usd = total_annual_usd.quantize(Decimal("0.01"))
+
+    return render(
+        request,
+        "money_observability/annual_expenses.html",
+        {
+            "rows": rows,
+            "total_annual_usd": total_annual_usd,
+            "total_monthly_usd": total_monthly_usd,
+        },
+    )
 
 
 @login_required(login_url="/admin/login/")
@@ -280,19 +304,11 @@ def monthly_summary(request):
         direction="debit",
         posted_date__gte=start,
         posted_date__lte=end,
-    ).values("category", "currency", "budget_treatment", "amount")
+    ).values("category", "currency", "amount")
 
     # Accumulate per category, converting all amounts to USD via FX_TO_USD.
-    # Shape: {category: {"USD": {"cash": D, "baseline": D, "planning": D, "count": int}}}
     raw_data: dict = defaultdict(
-        lambda: defaultdict(
-            lambda: {
-                "cash": Decimal(0),
-                "baseline": Decimal(0),
-                "planning": Decimal(0),
-                "count": 0,
-            }
-        )
+        lambda: defaultdict(lambda: {"cash": Decimal(0), "count": 0})
     )
 
     for tx in qs:
@@ -300,18 +316,9 @@ def monthly_summary(request):
         cur = tx["currency"]
         fx = FX_TO_USD.get(cur, Decimal("1.00"))
         amt = abs(tx["amount"]) * fx
-        bt = tx["budget_treatment"]
         cell = raw_data[cat]["USD"]
         cell["cash"] += amt
         cell["count"] += 1
-        if bt == BudgetTreatment.ORDINARY:
-            cell["baseline"] += amt
-            cell["planning"] += amt
-        elif bt == BudgetTreatment.ANNUAL:
-            cell["planning"] += amt / 12
-        elif bt == BudgetTreatment.IRREGULAR:
-            cell["planning"] += amt / 12
-        # ONE_OFF and UNKNOWN do not contribute to baseline or planning
 
     # Determine canonical category order: all CATEGORY_NAMES first (even if zero
     # spend), then Manual Review if present, then any unexpected categories.
@@ -327,14 +334,7 @@ def monthly_summary(request):
     annualize = Decimal(365) / Decimal(days_in_range)
 
     rows = []
-    totals: dict[str, dict] = defaultdict(
-        lambda: {
-            "cash": Decimal(0),
-            "baseline": Decimal(0),
-            "planning": Decimal(0),
-            "count": 0,
-        }
-    )
+    totals: dict[str, dict] = defaultdict(lambda: {"cash": Decimal(0), "count": 0})
 
     for cat in ordered_cats:
         currency_entries = []
@@ -342,26 +342,17 @@ def monthly_summary(request):
             cell = (
                 raw_data[cat][cur]
                 if cat in raw_data
-                else {
-                    "cash": Decimal(0),
-                    "baseline": Decimal(0),
-                    "planning": Decimal(0),
-                    "count": 0,
-                }
+                else {"cash": Decimal(0), "count": 0}
             )
             currency_entries.append(
                 {
                     "currency": cur,
                     "cash": cell["cash"].quantize(Decimal("0.01")),
-                    "baseline": cell["baseline"].quantize(Decimal("0.01")),
-                    "planning": cell["planning"].quantize(Decimal("0.01")),
                     "annualized": (cell["cash"] * annualize).quantize(Decimal("0.01")),
                     "count": cell["count"],
                 }
             )
             totals[cur]["cash"] += cell["cash"]
-            totals[cur]["baseline"] += cell["baseline"]
-            totals[cur]["planning"] += cell["planning"]
             totals[cur]["count"] += cell["count"]
         rows.append({"category": cat, "entries": currency_entries})
 
@@ -369,22 +360,11 @@ def monthly_summary(request):
         {
             "currency": cur,
             "cash": totals[cur]["cash"].quantize(Decimal("0.01")),
-            "baseline": totals[cur]["baseline"].quantize(Decimal("0.01")),
-            "planning": totals[cur]["planning"].quantize(Decimal("0.01")),
             "annualized": (totals[cur]["cash"] * annualize).quantize(Decimal("0.01")),
             "count": totals[cur]["count"],
         }
         for cur in sorted(totals)
     ]
-
-    # Count transactions with UNKNOWN budget_treatment (excluded from planning/baseline).
-    unknown_budget_count = Transaction.objects.filter(
-        excluded=False,
-        direction="debit",
-        posted_date__gte=start,
-        posted_date__lte=end,
-        budget_treatment=BudgetTreatment.UNKNOWN,
-    ).count()
 
     return render(
         request,
@@ -395,7 +375,6 @@ def monthly_summary(request):
             "available_months": available_months,
             "rows": rows,
             "total_rows": total_rows,
-            "unknown_budget_count": unknown_budget_count,
         },
     )
 
@@ -457,8 +436,8 @@ def spending_trends(request):
         Transaction.objects.filter(
             excluded=False,
             direction="debit",
-            budget_treatment=BudgetTreatment.ORDINARY,
         )
+        .exclude(category="Annual")
         .annotate(month=TruncMonth("posted_date"))
         .values("category", "month", "currency", "amount")
     )

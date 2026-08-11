@@ -19,30 +19,6 @@ class Direction(models.TextChoices):
     CREDIT = "credit", "Credit"
 
 
-class BudgetTreatment(models.TextChoices):
-    # How a transaction should be counted in spending reports:
-    # ORDINARY  = normal recurring monthly spend (included in baseline burn).
-    # ANNUAL    = paid once a year; amortise over 12 months for planning burn.
-    # IRREGULAR = expected but not monthly (medical, car maintenance, etc.).
-    # ONE_OFF   = non-recurring; exclude from both baseline and planning burn.
-    # UNKNOWN   = not yet classified (default — avoids silently inflating baseline).
-    ORDINARY = "ordinary", "Ordinary monthly"
-    ANNUAL = "annual", "Annual / amortised"
-    IRREGULAR = "irregular", "Irregular expected"
-    ONE_OFF = "one_off", "One-off"
-    UNKNOWN = "unknown", "Unknown"
-
-
-# Human-readable tooltips shown in the categorisation UI.
-BUDGET_TREATMENT_HINTS: dict[str, str] = {
-    BudgetTreatment.ORDINARY: "Normal recurring monthly spend; included in baseline burn. E.g. morning coffee, groceries, transit, recurring subscriptions.",
-    BudgetTreatment.ANNUAL: "Paid once a year; amortised ÷12 for planning burn. E.g. gym membership, car insurance, Amazon Prime.",
-    BudgetTreatment.IRREGULAR: "Expected but not on a fixed schedule; amortised in planning burn. E.g. car repairs, dental work, new glasses.",
-    BudgetTreatment.ONE_OFF: "Non-recurring; excluded from both baseline and planning burn. E.g. buying a sofa, a one-time flight, emergency vet bill.",
-    BudgetTreatment.UNKNOWN: "Not yet classified; excluded from baseline to avoid inflating the burn rate.",
-}
-
-
 class Account(models.Model):
     institution = models.CharField(max_length=100)
     name = models.CharField(max_length=200)
@@ -148,12 +124,6 @@ class Transaction(models.Model):
     category = models.CharField(max_length=100, blank=True, default="", db_index=True)
     category_rule_id = models.CharField(max_length=100, blank=True, default="")
     categorized_at = models.DateTimeField(null=True, blank=True)
-    budget_treatment = models.CharField(
-        max_length=20,
-        choices=BudgetTreatment.choices,
-        default=BudgetTreatment.ORDINARY,
-        db_index=True,
-    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

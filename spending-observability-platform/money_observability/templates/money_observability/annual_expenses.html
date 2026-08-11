@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Annual Expenses</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+      font-size: 13px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      min-height: 100dvh;
+      padding: 40px 32px;
+    }
+
+    a { color: #89b4fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    header h1 { font-size: 18px; color: #cba6f7; letter-spacing: 0.06em; }
+    header .home-link { color: #45475a; font-size: 18px; line-height: 1; text-decoration: none; flex-shrink: 0; }
+    header .home-link:hover { color: #cdd6f4; }
+
+    .hint {
+      color: #585b70;
+      font-size: 11px;
+      margin-bottom: 24px;
+    }
+
+    .summary-wrap { overflow-x: auto; }
+
+    table {
+      border-collapse: collapse;
+      min-width: 560px;
+      width: 100%;
+    }
+
+    thead th {
+      border-bottom: 1px solid #45475a;
+      color: #585b70;
+      font-size: 11px;
+      font-weight: normal;
+      letter-spacing: 0.08em;
+      padding: 4px 14px;
+      text-align: right;
+      text-transform: uppercase;
+    }
+    thead th:first-child, thead th:nth-child(2) { text-align: left; }
+
+    tbody tr { border-bottom: 1px solid #181825; cursor: pointer; }
+    tbody tr:hover { background: #24243a; }
+
+    td {
+      padding: 6px 14px;
+      text-align: right;
+      vertical-align: middle;
+    }
+    td:first-child, td:nth-child(2) { text-align: left; }
+
+    .date  { color: #585b70; white-space: nowrap; }
+    .desc  { color: #cdd6f4; }
+    .amount { color: #89b4fa; }
+    .cur-badge { color: #585b70; font-size: 10px; margin-right: 3px; }
+    .monthly { color: #a6e3a1; }
+
+    tfoot td {
+      border-top: 1px solid #45475a;
+      color: #cba6f7;
+      font-weight: bold;
+      padding: 6px 14px;
+      text-align: right;
+    }
+    tfoot td:first-child, tfoot td:nth-child(2) { text-align: left; }
+
+    .empty { color: #45475a; margin-top: 40px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a class="home-link" href="/" title="Home">⌂</a>
+    <h1>Annual Expenses</h1>
+  </header>
+
+  <p class="hint">Transactions tagged <em>annual</em> · amounts converted to USD · <a href="/categorize/?category=Annual">mark more via Browse Transactions</a></p>
+
+  {% if rows %}
+  <div class="summary-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th title="native currency">Amount</th>
+          <th title="converted at fixed rates">USD</th>
+          <th title="USD ÷ 12">Monthly equiv</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr onclick="window.location='/admin/money_observability/transaction/{{ row.id }}/change/'">
+          <td class="date">{{ row.date|date:"Y-m-d D" }}</td>
+          <td class="desc">{{ row.desc }}</td>
+          <td class="amount">
+            <span class="cur-badge">{{ row.currency }}</span>{{ row.native_amount }}
+          </td>
+          <td class="amount">{{ row.usd }}</td>
+          <td class="monthly">{{ row.monthly }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2">Total</td>
+          <td></td>
+          <td>{{ total_annual_usd }}</td>
+          <td class="monthly">{{ total_monthly_usd }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">No transactions tagged as annual yet.</p>
+  {% endif %}
+
+</body>
+</html>

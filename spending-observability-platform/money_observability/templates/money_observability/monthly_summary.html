@@ -199,14 +199,6 @@
   })();
   </script>
 
-  {% if unknown_budget_count %}
-  <div class="warning">
-    {{ unknown_budget_count }} transaction{{ unknown_budget_count|pluralize }} have budget treatment = <em>Unknown</em>
-    — they appear in Cash Outflow but not in Baseline or Planning Burn.
-    Set budget treatments in the admin to improve the planning view.
-  </div>
-  {% endif %}
-
   {% if rows %}
   <div class="summary-wrap">
     <table>
@@ -214,8 +206,6 @@
         <tr>
           <th>Category</th>
           <th title="every debit · USD">Cash Outflow (USD)</th>
-          <th title="ordinary only · USD">Baseline Burn (USD)</th>
-          <th title="ordinary + annual÷12 + irregular÷12 · USD">Planning Burn (USD)</th>
           <th title="cash × 365 / days · USD">Annualized (USD)</th>
           <th>Txns</th>
         </tr>
@@ -233,20 +223,6 @@
               {% for e in row.entries %}
                 <span class="currency-block">
                   <a class="amount {% if e.cash == 0 %}zero{% endif %}" href="/categorize/?category={{ row.category|urlencode }}&start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">{{ e.cash }}</a>
-                </span>
-              {% endfor %}
-            </td>
-            <td>
-              {% for e in row.entries %}
-                <span class="currency-block">
-                  <a class="amount {% if e.baseline == 0 %}zero{% endif %}" href="/categorize/?category={{ row.category|urlencode }}&start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">{{ e.baseline }}</a>
-                </span>
-              {% endfor %}
-            </td>
-            <td>
-              {% for e in row.entries %}
-                <span class="currency-block">
-                  <a class="amount {% if e.planning == 0 %}zero{% endif %}" href="/categorize/?category={{ row.category|urlencode }}&start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}">{{ e.planning }}</a>
                 </span>
               {% endfor %}
             </td>
@@ -275,16 +251,6 @@
           </td>
           <td>
             {% for t in total_rows %}
-              <span class="currency-block">{{ t.baseline }}</span>
-            {% endfor %}
-          </td>
-          <td>
-            {% for t in total_rows %}
-              <span class="currency-block">{{ t.planning }}</span>
-            {% endfor %}
-          </td>
-          <td>
-            {% for t in total_rows %}
               <span class="currency-block">{{ t.annualized }}</span>
             {% endfor %}
           </td>
@@ -299,9 +265,6 @@
   </div>
 
   <div class="legend">
-    <span>Cash Outflow</span> — every non-excluded debit, regardless of budget treatment.<br>
-    <span>Baseline Burn</span> — ordinary recurring monthly spend only.<br>
-    <span>Planning Burn</span> — ordinary + annual amounts ÷ 12 + irregular amounts ÷ 12.<br>
     All amounts in USD. Fixed rates: GBP 1.27, EUR 1.08 — set in <code>FX_TO_USD</code> in views.py.
   </div>
 

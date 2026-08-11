@@ -155,21 +155,6 @@
       gap: 8px;
       flex-shrink: 0;
     }
-    #budget-bar .bar-label { color: #585b70; font-size: 11px; margin-right: 2px; }
-    .budg-btn {
-      padding: 3px 10px;
-      border: 1px solid #45475a;
-      background: #313244;
-      color: #94e2d5;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-      font-family: inherit;
-      transition: background 0.1s, border-color 0.1s;
-    }
-    .budg-btn:hover { background: #45475a; border-color: #585b70; }
-    .budg-btn:focus { outline: 2px solid #94e2d5; outline-offset: 1px; }
-    .budg-btn .shortcut { display: inline-block; margin-right: 5px; color: #f38ba8; font-weight: bold; }
     /* ── Sort links ──────────────────────────────────────────── */
     th a.sort-link { color: inherit; text-decoration: none; }
     th a.sort-link:hover { color: #cdd6f4; }
@@ -205,14 +190,6 @@
   {% endfor %}
 </div>
 
-<div id="budget-bar">
-  <span class="bar-label">Budget:</span>
-  <button class="budg-btn" data-treatment="annual" tabindex="-1" title="{{ budget_hints.annual }}"><span class="shortcut">⇧A</span>Annual</button>
-  <button class="budg-btn" data-treatment="ordinary" tabindex="-1" title="{{ budget_hints.ordinary }}"><span class="shortcut">⇧O</span>Ordinary</button>
-  <button class="budg-btn" data-treatment="irregular" tabindex="-1" title="{{ budget_hints.irregular }}"><span class="shortcut">⇧I</span>Irregular</button>
-  <button class="budg-btn" data-treatment="one_off" tabindex="-1" title="{{ budget_hints.one_off }}"><span class="shortcut">⇧X</span>One-off</button>
-</div>
-
 <div id="txn-list">
   {% if transactions %}
   <table>
@@ -223,7 +200,6 @@
       <col class="col-amount">
       <col class="col-curr">
       <col class="col-cat">
-      <col class="col-budg">
     </colgroup>
     <thead>
       <tr>
@@ -233,19 +209,17 @@
         <th style="text-align:right"><a class="sort-link{% if sort_base == 'amount' %} active{% endif %}" href="?category={{ view_category|urlencode }}&sort={% if sort == '-amount' %}amount{% else %}-amount{% endif %}{% if start %}&start={{ start|date:'Y-m-d' }}{% endif %}{% if end %}&end={{ end|date:'Y-m-d' }}{% endif %}">Amount{% if sort_base == 'amount' %} {% if sort_dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}</a></th>
         <th>Curr</th>
         <th>Category</th>
-        <th class="col-budg"></th>
       </tr>
     </thead>
     <tbody id="txn-body">
       {% for tx in transactions %}
-      <tr class="txn-row" data-id="{{ tx.id }}" data-budget="{{ tx.budget_treatment }}">
+      <tr class="txn-row" data-id="{{ tx.id }}">
         <td class="col-check"><input type="checkbox" tabindex="-1"></td>
         <td>{{ tx.posted_date|date:"Y-m-d D" }}</td>
         <td title="{{ tx.description_raw }}">{{ tx.display_desc }}</td>
         <td class="amount-cell" style="text-align:right">{{ tx.display_amount|floatformat:2 }}</td>
         <td>{{ tx.currency }}</td>
         <td class="col-cat">{{ tx.category }}</td>
-        <td class="col-budg">{% if tx.budget_treatment == 'annual' %}A{% elif tx.budget_treatment == 'ordinary' %}O{% elif tx.budget_treatment == 'irregular' %}I{% elif tx.budget_treatment == 'one_off' %}X{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -256,7 +230,7 @@
 </div>
 
 <div id="status-bar">
-  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign &nbsp;·&nbsp; y&nbsp;unassign &nbsp;·&nbsp; d&nbsp;exclude &nbsp;·&nbsp; ⇧A&nbsp;annual &nbsp;·&nbsp; ⇧O&nbsp;ordinary &nbsp;·&nbsp; ⇧I&nbsp;irregular &nbsp;·&nbsp; ⇧X&nbsp;one-off</span>
+  <span>j/k&nbsp;move &nbsp;·&nbsp; space/x&nbsp;select &nbsp;·&nbsp; a&nbsp;all &nbsp;·&nbsp; esc&nbsp;clear &nbsp;·&nbsp; letter&nbsp;assign &nbsp;·&nbsp; y&nbsp;unassign &nbsp;·&nbsp; d&nbsp;exclude</span>
   <span id="sel-count"></span>
 </div>
 
@@ -419,41 +393,6 @@
     showToast(`🚫 ${data.excluded} excluded`);
   }
 
-  async function assignBudget(treatment) {
-    const ids = targetIds();
-    if (!ids.length) return;
-
-    let data;
-    try {
-      const resp = await fetch('/categorize/assign-budget/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF,
-        },
-        body: JSON.stringify({ ids, budget_treatment: treatment }),
-      });
-      data = await resp.json();
-    } catch (err) {
-      showToast('Network error', true);
-      return;
-    }
-
-    if (!data.updated) return;
-
-    // Update Budg cells in-place; do NOT remove rows
-    const label = {annual: 'A', ordinary: 'O', irregular: 'I', one_off: 'X'}[treatment] || '';
-    const idSet = new Set(ids);
-    rows().forEach(r => {
-      if (idSet.has(parseInt(r.dataset.id, 10))) {
-        r.dataset.budget = treatment;
-        r.querySelector('.col-budg').textContent = label;
-      }
-    });
-
-    showToast(`\u2713 ${data.updated} \u2192 ${treatment}`);
-  }
-
   let toastTimer = null;
   function showToast(msg) {
     const el = document.getElementById('toast');
@@ -478,14 +417,6 @@
     if (e.key === 'Escape') { e.preventDefault(); clearSelection(); return; }
     if (e.key === 'y') { e.preventDefault(); await assign('Manual Review'); return; }
     if (e.key === 'd') { e.preventDefault(); await exclude(); return; }
-
-    if (e.shiftKey) {
-      if (e.key === 'A') { e.preventDefault(); await assignBudget('annual'); return; }
-      if (e.key === 'O') { e.preventDefault(); await assignBudget('ordinary'); return; }
-      if (e.key === 'I') { e.preventDefault(); await assignBudget('irregular'); return; }
-      if (e.key === 'X') { e.preventDefault(); await assignBudget('one_off'); return; }
-      return;
-    }
 
     if (/^[a-z]$/i.test(e.key)) {
       const cat = categoryForKey(e.key);
@@ -514,14 +445,6 @@
     }
     const id = row.dataset.id;
     window.open(`/admin/money_observability/transaction/${id}/change/`, '_blank');
-  });
-
-  // ── Budget bar buttons ───────────────────────────────────────────────────
-  document.querySelectorAll('.budg-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      assignBudget(btn.dataset.treatment);
-    });
   });
 
   // ── Category buttons ─────────────────────────────────────────────────────

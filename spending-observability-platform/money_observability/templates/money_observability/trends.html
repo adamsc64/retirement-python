@@ -156,6 +156,7 @@
   <p class="subtitle">
     Ordinary baseline spend by category · USD · most recent {% if months %}{{ months|length }} month{{ months|length|pluralize }}{% endif %}
     &nbsp;·&nbsp; <a href="{% url 'monthly_summary' %}">monthly summary →</a>
+    &nbsp;·&nbsp; <a href="{% url 'annual_expenses' %}">annual expenses →</a>
   </p>
 
   {% if not rows %}

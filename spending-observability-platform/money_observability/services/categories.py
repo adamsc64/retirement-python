@@ -50,6 +50,11 @@ CATEGORIES: list[Category] = [
     Category("Travel", "v", "flights, hotels, travel agencies, foreign-trip expenses"),
     Category("Giving", "i", "charitable donations"),
     Category("Other", "o", "anything that doesn't fit the above"),
+    Category(
+        "Annual",
+        "n",
+        "one-off annual expenses: tax payments, club dues, yearly memberships",
+    ),
 ]
 
 # Derived helpers — computed once so callers don't repeat the comprehensions.
