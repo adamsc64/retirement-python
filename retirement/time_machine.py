@@ -414,6 +414,162 @@ def parse_spending_input(
     return amount
 
 
+def resolve_net_worth(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> float:
+    if args.net_worth is None:
+        return prompt_float("What is your net worth? ", minimum=0.0)
+    try:
+        net_worth = parse_shorthand_number(args.net_worth)
+    except ValueError:
+        parser.error(
+            "--net-worth must be a valid number (for example: 1500000 or 1.5m)."
+        )
+    if net_worth < 0:
+        parser.error("--net-worth must be greater than or equal to 0.")
+    return net_worth
+
+
+def resolve_stock_weight(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> float:
+    if args.stock_allocation is None:
+        return prompt_stock_allocation()
+    parsed = parse_stock_allocation(args.stock_allocation)
+    if parsed is None:
+        parser.error("--stock-allocation must be like 75, 0.75, or 75/25.")
+    return parsed
+
+
+def print_intro(
+    rows: list[dict[str, float | int]],
+    start_index: int,
+    available_years: int,
+    stock_weight: float,
+    strategy: str | None,
+) -> None:
+    print(style(ASCII_ART, CYAN))
+    print(style(GAME_TITLE, BOLD, CYAN))
+    print("Loaded embedded market return data.")
+    print("Run a spending strategy through a hidden slice of market history.")
+    print(
+        "All portfolio returns shown in the game are real returns, meaning inflation-adjusted."
+    )
+    start_year_label = int(rows[start_index]["year"])
+    end_year_label = int(rows[-1]["year"])
+    print(
+        f"Loaded a historical sequence from {start_year_label} to {end_year_label} "
+        f"({available_years} years available from the start point)."
+    )
+    bond_weight = 1.0 - stock_weight
+    print(
+        f"Using allocation: {style(f'{stock_weight:.0%} stocks / {bond_weight:.0%} bonds', BOLD, YELLOW)}"
+    )
+    if strategy == "guardrails":
+        print("Running Guyton-Klinger guardrail strategy automatically.")
+    else:
+        print("Each year, enter how much you want to spend.")
+        print(
+            "You can enter a dollar amount (negative to save), a percent of net worth like 6% or -3%, "
+            "a change from last year like +10% / -10%, or press Enter."
+        )
+        print("Type 'q', 'quit', or 'end' when you want to end the game.")
+
+
+def prompt_spend(net_worth: float, last_spend: float | None) -> float | None:
+    """Returns spend amount, or None if the user quits."""
+    while True:
+        if last_spend is None:
+            print("  (Press Enter for 5% of net worth.)")
+        else:
+            print(f"  (Press Enter to repeat {format_money(last_spend)}.)")
+        spend_raw = input("What would you like to spend this year? ").strip().lower()
+        if spend_raw in {"q", "quit", "exit", "end"}:
+            return None
+        spend = parse_spending_input(spend_raw, net_worth, last_spend)
+        if spend is not None:
+            return spend
+        if last_spend is None:
+            print(
+                "Please enter a dollar amount like 60000, a percentage like 6%, press Enter for 5%, or 'q' to quit."
+            )
+        else:
+            print(
+                "Please enter a dollar amount, a percentage like 6%, a change like +10% or -10%, press Enter to reuse last year's spending, or 'q' to quit."
+            )
+
+
+def apply_year_return(
+    row: dict[str, float | int],
+    net_worth: float,
+    spend: float,
+    stock_weight: float,
+    year: int,
+    year_number: int,
+    history: list[dict[str, float | int]],
+) -> float | None:
+    """Withdraws spend, applies market return, records history. Returns new net_worth or None if bankrupt."""
+    if spend < 0:
+        print(
+            f"You will save {style(format_money(-spend), BOLD, GREEN)} this year (net income)."
+        )
+    else:
+        print(f"You will spend {style(format_money(spend), BOLD, YELLOW)} this year.")
+    print(style("-" * 72, DIM))
+    print(style("Applying this year's market results...", BOLD, MAGENTA))
+
+    spend_pct = spend / net_worth if net_worth > 0 else 0.0
+    net_worth -= spend
+    if net_worth <= 0:
+        print(style(f"You ran out of money during year {year_number}.", BOLD, RED))
+        return None
+
+    stock_return = float(row["stock_return"])
+    bond_return = float(row["bond_return"])
+    inflation_rate = float(row["inflation_rate"])
+    bond_weight = 1.0 - stock_weight
+    nominal_return = (stock_weight * stock_return) + (bond_weight * bond_return)
+    real_return = calculate_real_return(
+        stock_weight=stock_weight,
+        stock_return=stock_return,
+        bond_return=bond_return,
+        inflation_rate=inflation_rate,
+    )
+    history.append(
+        {
+            "year": year,
+            "portfolio": net_worth + spend,
+            "spending": spend,
+            "spend_pct": spend_pct,
+            "return": real_return,
+        }
+    )
+    net_worth *= 1.0 + real_return
+
+    print(
+        f"Stocks returned {format_return_label(stock_return)} and bonds returned {format_return_label(bond_return)}."
+    )
+    print(
+        f"Your {stock_weight:.0%}/{bond_weight:.0%} mix produced a nominal return of {format_return_label(nominal_return)}."
+    )
+    print(
+        f"Inflation was {format_percent(inflation_rate)}, so the real return was "
+        f"((1 + {nominal_return:.4f}) / (1 + {inflation_rate:.4f})) - 1 = {format_return_label(real_return)}."
+    )
+    print(f"End-of-year net worth: {style(format_money(net_worth), BOLD)}")
+
+    if net_worth <= 0:
+        print(
+            style(
+                f"You ran out of money after year {year_number}'s return was applied.",
+                BOLD,
+                RED,
+            )
+        )
+        return None
+    return net_worth
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -433,53 +589,9 @@ def main(argv: list[str] | None = None) -> None:
         else min(args.max_years, available_years)
     )
 
-    print(style(ASCII_ART, CYAN))
-    print(style(GAME_TITLE, BOLD, CYAN))
-    print("Loaded embedded market return data.")
-    print("Run a spending strategy through a hidden slice of market history.")
-    print(
-        "All portfolio returns shown in the game are real returns, meaning inflation-adjusted."
-    )
-    start_year_label = int(rows[start_index]["year"])
-    end_year_label = int(rows[-1]["year"])
-    print(
-        f"Loaded a historical sequence from {start_year_label} to {end_year_label} "
-        f"({available_years} years available from the start point)."
-    )
-
-    if args.net_worth is None:
-        net_worth = prompt_float("What is your net worth? ", minimum=0.0)
-    else:
-        try:
-            net_worth = parse_shorthand_number(args.net_worth)
-        except ValueError:
-            parser.error(
-                "--net-worth must be a valid number (for example: 1500000 or 1.5m)."
-            )
-        if net_worth < 0:
-            parser.error("--net-worth must be greater than or equal to 0.")
-
-    if args.stock_allocation is None:
-        stock_weight = prompt_stock_allocation()
-    else:
-        parsed_stock_weight = parse_stock_allocation(args.stock_allocation)
-        if parsed_stock_weight is None:
-            parser.error("--stock-allocation must be like 75, 0.75, or 75/25.")
-        stock_weight = parsed_stock_weight
-
-    bond_weight = 1.0 - stock_weight
-
-    print(
-        f"Using allocation: {style(f'{stock_weight:.0%} stocks / {bond_weight:.0%} bonds', BOLD, YELLOW)}"
-    )
-    if args.strategy == "guardrails":
-        print("Running Guyton-Klinger guardrail strategy automatically.")
-    else:
-        print("Each year, enter how much you want to spend.")
-        print(
-            "You can enter a dollar amount, a percent of net worth like 6%, a change from last year like +10% / -10%, or press Enter."
-        )
-        print("Type 'q', 'quit', or 'end' when you want to end the game.")
+    net_worth = resolve_net_worth(args, parser)
+    stock_weight = resolve_stock_weight(args, parser)
+    print_intro(rows, start_index, available_years, stock_weight, args.strategy)
 
     year_index = start_index
     last_spend: float | None = None
@@ -487,29 +599,21 @@ def main(argv: list[str] | None = None) -> None:
     while year_index < len(rows) and (year_index - start_index) < max_years:
         row = rows[year_index]
         year = int(row["year"])
-        start_portfolio = net_worth
         year_number = (year_index - start_index) + 1
         print()
         print(style(f"Year {year_number}", BOLD, CYAN))
         print(f"Current net worth: {style(format_money(net_worth), BOLD)}")
         if last_spend is not None:
-            print(f"Last year's spending: {style(format_money(last_spend), YELLOW)}")
             spending_rate = (last_spend / net_worth) * 100 if net_worth > 0 else 0.0
             print(
-                f"That's {style(f'{spending_rate:.2f}%', BOLD)} of your current net worth."
+                f"Last year's spending: {style(format_money(last_spend), YELLOW)} ({style(f'{spending_rate:.2f}%', BOLD)} of current net worth)"
             )
 
         if args.strategy == "guardrails":
             spend = gk_spend(net_worth, last_spend)
         else:
-            if last_spend is None:
-                print("  (Press Enter for 5% of net worth.)")
-            else:
-                print(f"  (Press Enter to repeat {format_money(last_spend)}.)")
-            spend_raw = (
-                input("What would you like to spend this year? ").strip().lower()
-            )
-            if spend_raw in {"q", "quit", "exit", "end"}:
+            spend = prompt_spend(net_worth, last_spend)
+            if spend is None:
                 print(
                     f"Game ended after year {year_number - 1} with {style(format_money(net_worth), BOLD)} remaining."
                 )
@@ -517,84 +621,14 @@ def main(argv: list[str] | None = None) -> None:
                 print_notable_stats(history)
                 return
 
-            spend = parse_spending_input(spend_raw, net_worth, last_spend)
-            if spend is None:
-                if last_spend is None:
-                    print(
-                        "Please enter a dollar amount like 60000, a percentage like 6%, press Enter for 5%, or 'q' to quit."
-                    )
-                else:
-                    print(
-                        "Please enter a dollar amount, a percentage like 6%, a change like +10% or -10%, press Enter to reuse last year's spending, or 'q' to quit."
-                    )
-                continue
-
-        if spend < 0:
-            print(
-                f"You will save {style(format_money(-spend), BOLD, GREEN)} this year (net income)."
-            )
-        else:
-            print(
-                f"You will spend {style(format_money(spend), BOLD, YELLOW)} this year."
-            )
-        print(style("-" * 72, DIM))
-        print(style("Applying this year's market results...", BOLD, MAGENTA))
-        spend_pct = spend / start_portfolio if start_portfolio > 0 else 0.0
-        net_worth -= spend
-        if net_worth <= 0:
-            print(style(f"You ran out of money during year {year_number}.", BOLD, RED))
+        net_worth = apply_year_return(
+            row, net_worth, spend, stock_weight, year, year_number, history
+        )
+        if net_worth is None:
             print_summary_table(history)
             print_notable_stats(history)
             return
         last_spend = spend
-
-        stock_return = float(row["stock_return"])
-        bond_return = float(row["bond_return"])
-        inflation_rate = float(row["inflation_rate"])
-        nominal_return = (stock_weight * stock_return) + (bond_weight * bond_return)
-        real_return = calculate_real_return(
-            stock_weight=stock_weight,
-            stock_return=stock_return,
-            bond_return=bond_return,
-            inflation_rate=inflation_rate,
-        )
-        history.append(
-            {
-                "year": year,
-                "portfolio": start_portfolio,
-                "spending": spend,
-                "spend_pct": spend_pct,
-                "return": real_return,
-            }
-        )
-        net_worth *= 1.0 + real_return
-
-        print(
-            f"Stocks returned {format_return_label(stock_return)} and "
-            f"bonds returned {format_return_label(bond_return)}."
-        )
-        print(
-            f"Your {stock_weight:.0%}/{bond_weight:.0%} mix produced a nominal return of "
-            f"{format_return_label(nominal_return)}."
-        )
-        print(
-            f"Inflation was {format_percent(inflation_rate)}, so the real return was "
-            f"((1 + {nominal_return:.4f}) / (1 + {inflation_rate:.4f})) - 1 = {format_return_label(real_return)}."
-        )
-        print(f"End-of-year net worth: {style(format_money(net_worth), BOLD)}")
-
-        if net_worth <= 0:
-            print(
-                style(
-                    f"You ran out of money after year {year_number}'s return was applied.",
-                    BOLD,
-                    RED,
-                )
-            )
-            print_summary_table(history)
-            print_notable_stats(history)
-            return
-
         year_index += 1
 
     print(
