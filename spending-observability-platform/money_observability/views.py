@@ -39,21 +39,13 @@ FX_TO_USD: dict[str, Decimal] = {
 
 @login_required(login_url="/admin/login/")
 def index(request):
-    total = Transaction.objects.filter(excluded=False, direction="debit").count()
     uncategorized = Transaction.objects.filter(
         category=CATEGORY_MANUAL_REVIEW, excluded=False, direction="debit"
     ).count()
-    categorized = total - uncategorized
-    pct = round(100 * categorized / total) if total else 0
     return render(
         request,
         "money_observability/index.html",
-        {
-            "total": total,
-            "uncategorized": uncategorized,
-            "categorized": categorized,
-            "pct": pct,
-        },
+        {"uncategorized": uncategorized},
     )
 
 
