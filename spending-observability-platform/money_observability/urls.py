@@ -13,4 +13,5 @@ urlpatterns = [
     path("annual/", views.annual_expenses, name="annual_expenses"),
     path("trends/", views.spending_trends, name="spending_trends"),
     path("upload/", views.upload_csv, name="upload_csv"),
+    path("repeating/", views.repeating_items, name="repeating_items"),
 ]

@@ -8,6 +8,8 @@ from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import models
+from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -531,6 +533,99 @@ def spending_trends(request):
             "rows": rows,
             "total_cells": total_cells,
             "total_annual_est": total_annual_est,
+        },
+    )
+
+
+@login_required(login_url="/admin/login/")
+def repeating_items(request):
+    date_bounds = Transaction.objects.filter(
+        excluded=False, direction="debit"
+    ).aggregate(
+        earliest=models.Min("posted_date"),
+        latest=models.Max("posted_date"),
+    )
+    default_start = date_bounds["earliest"] or date.today()
+    default_end = date_bounds["latest"] or date.today()
+
+    start_str = request.GET.get("start", "")
+    end_str = request.GET.get("end", "")
+    try:
+        start = date.fromisoformat(start_str) if start_str else default_start
+    except ValueError:
+        start = default_start
+    try:
+        end = date.fromisoformat(end_str) if end_str else default_end
+    except ValueError:
+        end = default_end
+
+    SORT_OPTIONS = {
+        "description": ("description_clean",),
+        "-description": ("-description_clean",),
+        "amount": ("amount",),
+        "-amount": ("-amount",),
+        "count": ("count", "description_clean"),
+        "-count": ("-count", "description_clean"),
+        "total": ("total",),
+        "-total": ("-total",),
+    }
+    # Default descending per column when first clicked
+    COLUMN_DEFAULT_SORT = {
+        "description": "description",
+        "amount": "-amount",
+        "count": "-count",
+        "total": "-total",
+    }
+    sort = request.GET.get("sort", "-count")
+    if sort not in SORT_OPTIONS:
+        sort = "-count"
+
+    qs = (
+        Transaction.objects.filter(
+            excluded=False,
+            direction="debit",
+            posted_date__gte=start,
+            posted_date__lte=end,
+        )
+        .values("description_clean", "amount", "currency")
+        .annotate(count=Count("id"), total=Sum("amount"))
+        .filter(count__gte=2)
+        .order_by(*SORT_OPTIONS[sort])
+    )
+
+    rows = [
+        {
+            "description": r["description_clean"],
+            "amount": abs(r["amount"]).quantize(Decimal("0.01")),
+            "currency": r["currency"],
+            "count": r["count"],
+            "total": abs(r["total"]).quantize(Decimal("0.01")),
+        }
+        for r in qs
+    ]
+
+    # Build sort links: active column toggles direction; inactive goes to default.
+    sort_base = sort.lstrip("-")
+
+    def sort_link(col):
+        if sort_base == col:
+            return "-" + col if not sort.startswith("-") else col
+        return COLUMN_DEFAULT_SORT[col]
+
+    return render(
+        request,
+        "money_observability/repeating_items.html",
+        {
+            "rows": rows,
+            "total_groups": len(rows),
+            "start": start,
+            "end": end,
+            "sort": sort,
+            "sort_base": sort_base,
+            "sort_description": sort_link("description"),
+            "sort_amount": sort_link("amount"),
+            "sort_count": sort_link("count"),
+            "sort_total": sort_link("total"),
         },
     )
 

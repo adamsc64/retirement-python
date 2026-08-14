@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Repeating Items</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+      font-size: 13px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      min-height: 100dvh;
+      padding: 40px 32px;
+    }
+
+    a { color: #89b4fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    header h1 { font-size: 18px; color: #cba6f7; letter-spacing: 0.06em; }
+    header .home-link { color: #45475a; font-size: 18px; line-height: 1; text-decoration: none; flex-shrink: 0; }
+    header .home-link:hover { color: #cdd6f4; }
+
+    .subtitle {
+      color: #45475a;
+      font-size: 11px;
+      margin-bottom: 24px;
+    }
+
+    .empty {
+      color: #585b70;
+      font-size: 13px;
+      margin-top: 48px;
+    }
+
+    /* Date range form */
+    .range-form {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .range-form label { color: #585b70; font-size: 11px; }
+    .range-form input[type="date"] {
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 4px;
+      color: #cdd6f4;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 5px 8px;
+    }
+    .range-form input[type="date"]:focus {
+      outline: none;
+      border-color: #89b4fa;
+    }
+    .range-form button {
+      background: #313244;
+      border: 1px solid #45475a;
+      border-radius: 4px;
+      color: #cdd6f4;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 5px 14px;
+    }
+    .range-form button:hover { background: #45475a; }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    thead th {
+      border-bottom: 1px solid #45475a;
+      color: #585b70;
+      font-size: 11px;
+      font-weight: normal;
+      letter-spacing: 0.06em;
+      padding: 4px 16px 8px;
+      text-align: right;
+      text-transform: uppercase;
+    }
+    thead th:first-child { text-align: left; padding-left: 0; }
+    thead th a {
+      color: inherit;
+      text-decoration: none;
+    }
+    thead th a:hover { color: #cdd6f4; }
+    thead th.active a { color: #89b4fa; }
+
+    tbody tr { border-bottom: 1px solid #181825; }
+    tbody tr:hover { background: #24243a; }
+
+    td {
+      padding: 6px 16px;
+      text-align: right;
+      vertical-align: middle;
+    }
+    td:first-child {
+      text-align: left;
+      padding-left: 0;
+      color: #cdd6f4;
+      max-width: 420px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .amount { color: #89b4fa; }
+    .count  { color: #a6e3a1; }
+    .total  { color: #cba6f7; }
+    .currency { color: #585b70; font-size: 11px; margin-left: 2px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a class="home-link" href="/">←</a>
+    <h1>🔁 Repeating Items</h1>
+  </header>
+
+  <p class="subtitle">Non-excluded debits with the same description and amount · {{ total_groups }} group{{ total_groups|pluralize }}</p>
+
+  <form class="range-form" method="get">
+    <label for="start">from</label>
+    <input id="start" name="start" type="date" value="{{ start|date:'Y-m-d' }}">
+    <label for="end">to</label>
+    <input id="end" name="end" type="date" value="{{ end|date:'Y-m-d' }}">
+    <button type="submit">apply</button>
+  </form>
+
+  {% if rows %}
+  <table>
+    <thead>
+      <tr>
+        <th {% if sort_base == 'description' %}class="active"{% endif %}>
+          <a href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}&sort={{ sort_description }}">Description{% if sort_base == 'description' %} {% if sort == 'description' %}↑{% else %}↓{% endif %}{% endif %}</a>
+        </th>
+        <th {% if sort_base == 'amount' %}class="active"{% endif %}>
+          <a href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}&sort={{ sort_amount }}">Amount{% if sort_base == 'amount' %} {% if sort == 'amount' %}↑{% else %}↓{% endif %}{% endif %}</a>
+        </th>
+        <th {% if sort_base == 'count' %}class="active"{% endif %}>
+          <a href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}&sort={{ sort_count }}">Occurrences{% if sort_base == 'count' %} {% if sort == 'count' %}↑{% else %}↓{% endif %}{% endif %}</a>
+        </th>
+        <th {% if sort_base == 'total' %}class="active"{% endif %}>
+          <a href="?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}&sort={{ sort_total }}">Total{% if sort_base == 'total' %} {% if sort == 'total' %}↑{% else %}↓{% endif %}{% endif %}</a>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td title="{{ row.description }}">{{ row.description }}</td>
+        <td><span class="amount">{{ row.amount }}</span><span class="currency">{{ row.currency }}</span></td>
+        <td><span class="count">{{ row.count }}</span></td>
+        <td><span class="total">{{ row.total }}</span><span class="currency">{{ row.currency }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No repeating items found.</p>
+  {% endif %}
+
+</body>
+</html>
