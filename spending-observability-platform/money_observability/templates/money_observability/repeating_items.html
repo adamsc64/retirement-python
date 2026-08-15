@@ -160,7 +160,7 @@
     <tbody>
       {% for row in rows %}
       <tr>
-        <td title="{{ row.description }}">{{ row.description }}</td>
+        <td title="{{ row.description }}"><a href="/admin/money_observability/transaction/?q={{ row.description|urlencode }}">{{ row.description }}</a></td>
         <td><span class="amount">{{ row.amount }}</span><span class="currency">{{ row.currency }}</span></td>
         <td><span class="count">{{ row.count }}</span></td>
         <td><span class="total">{{ row.total }}</span><span class="currency">{{ row.currency }}</span></td>
