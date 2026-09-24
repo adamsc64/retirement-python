@@ -407,10 +407,7 @@ def parse_spending_input(
         amount = parse_shorthand_number(cleaned)
     except ValueError:
         return None
-    if cleaned.startswith(("+", "-")):
-        if last_spend is None:
-            return None
-        return last_spend + amount
+    # Absolute dollar amounts are literal (negative means saving), not a change from last year.
     return amount
 
 
