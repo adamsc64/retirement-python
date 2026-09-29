@@ -407,7 +407,12 @@ def parse_spending_input(
         amount = parse_shorthand_number(cleaned)
     except ValueError:
         return None
-    # Absolute dollar amounts are literal (negative means saving), not a change from last year.
+    if cleaned.startswith(("+", "-")):
+        # Signed dollar amounts are a change from last year's spend, like signed percentages.
+        if last_spend is None:
+            return None
+        return last_spend + amount
+    # Unsigned dollar amounts are a literal amount to spend.
     return amount
 
 
