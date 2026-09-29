@@ -353,6 +353,8 @@ def print_summary_table(history: list[dict[str, float | int]]) -> None:
     print("-+-".join("-" * width for width in widths))
     for row in rows:
         print(" | ".join(value.ljust(widths[idx]) for idx, value in enumerate(row)))
+    average_draw = sum(float(entry["spend_pct"]) for entry in history) / len(history)
+    print(f"Average draw: {format_percent(average_draw)}")
 
 
 def print_notable_stats(history: list[dict[str, float | int]]) -> None:

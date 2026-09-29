@@ -1,6 +1,34 @@
+from contextlib import redirect_stdout
+from io import StringIO
 import unittest
 
-from time_machine import parse_spending_input
+from time_machine import parse_spending_input, print_summary_table
+
+
+class TestPrintSummaryTable(unittest.TestCase):
+    def test_reports_arithmetic_average_of_annual_spend_percentages(self):
+        history = [
+            {
+                "year": 2000,
+                "portfolio": 1_000_000,
+                "return": 0.0,
+                "spending": 40_000,
+                "spend_pct": 0.04,
+            },
+            {
+                "year": 2001,
+                "portfolio": 1_000_000,
+                "return": 0.0,
+                "spending": 60_000,
+                "spend_pct": 0.06,
+            },
+        ]
+        output = StringIO()
+
+        with redirect_stdout(output):
+            print_summary_table(history)
+
+        self.assertIn("Average draw: 5.00%", output.getvalue())
 
 
 class TestParseSpendingInput(unittest.TestCase):
